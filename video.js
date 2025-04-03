@@ -71,9 +71,24 @@ class VideoManager {
 
   displayVideo() {
     if (this.selectedVideo) {
-      image(this.selectedVideo, 0, 0, width, height);
+      let vidAspect = this.selectedVideo.width / this.selectedVideo.height;
+      let canvasAspect = width / height;
+      let drawWidth, drawHeight;
+  
+      if (vidAspect > canvasAspect) {
+        // Video is wider than canvas — fit width
+        drawWidth = width;
+        drawHeight = width / vidAspect;
+      } else {
+        // Video is taller than canvas — fit height
+        drawHeight = height;
+        drawWidth = height * vidAspect;
+      }
+  
+      image(this.selectedVideo, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
     }
   }
+  
 }
 
 // Create video managers
@@ -118,6 +133,8 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   setupWebSerial();
 }
+
+
 
 // Function to play a **single chosen** success sound and loop it manually
 function playSuccess() {
@@ -411,44 +428,36 @@ function draw() {
   checkFamily();
   checkFriends();
 }
+// Handle window resizing (including exiting full-screen mode)
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
 
 // Extend keyPressed to toggle new categories
 function keyPressed() {
-  if (key === '1') {
-    success = 0;
-  } else if (key === '2') {
-    success = 1;
+  if (key === 'f' || key === 'F') {
+    let fs = fullscreen();
+    fullscreen(!fs);
+
+    // Use a short delay before resizing the canvas to allow fullscreen mode to apply
+    setTimeout(() => {
+      resizeCanvas(windowWidth, windowHeight);
+    }, 100);
   }
 
-  if (key === '3') {
-    beauty = 0;
-  } else if (key === '4') {
-    beauty = 1;
-  }
-
-  if (key === '5') {
-    safety = 0;
-  } else if (key === '6') {
-    safety = 1;
-  }
-
-  if (key === '7') {
-    love = 0;
-  } else if (key === '8') {
-    love = 1;
-  }
-
-  if (key === '9') {
-    family = 0;
-  } else if (key === '0') {
-    family = 1;
-  }
-
-  if (key === '-') {
-    friends = 0;
-  } else if (key === '=') {
-    friends = 1;
-  }
+  // Your existing key toggles
+  if (key === '1') success = 0;
+  else if (key === '2') success = 1;
+  else if (key === '3') beauty = 0;
+  else if (key === '4') beauty = 1;
+  else if (key === '5') safety = 0;
+  else if (key === '6') safety = 1;
+  else if (key === '7') love = 0;
+  else if (key === '8') love = 1;
+  else if (key === '9') family = 0;
+  else if (key === '0') family = 1;
+  else if (key === '-') friends = 0;
+  else if (key === '=') friends = 1;
 
   checkSuccess();
   checkBeauty();
