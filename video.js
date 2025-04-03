@@ -3,15 +3,21 @@ let videosB = [];
 let totalVideos = 4;
 let money = 1; // Start at 1 so it doesn't play immediately
 let makeup = 1;
+// p5.webserial library instance and related variables
+const serial = new p5.WebSerial(); // WebSerial library instance
+let portButton; // Button for port selection
+let inData = []; // Array for incoming serial data
+let inString = []; // String for incoming serial data
+let outByte = 0; // Byte for outgoing serial data
 
 const moneySounds = new Tone.Players({
-  shiver: "sounds/shiver-short.mp3",
-  stronger: "sounds/stronger.mp3",
+  shiver: "sounds/synth1.mp3",
+  stronger: "sounds/synth2.mp3",
 }).toDestination();
 
 const makeupSounds = new Tone.Players({
-  sun: "sounds/sunshine.mp3",
-  sweet: "sounds/sweet.mp3",
+  sun: "sounds/synth3.mp3",
+  sweet: "sounds/synth4.mp3",
 }).toDestination();
 
 // VideoManager class to handle selection and playback
@@ -72,6 +78,7 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  setupWebSerial();
 }
 
 // Function to play a **single chosen** money sound and loop it manually
@@ -170,11 +177,12 @@ function checkMakeup() {
 function draw() {
   blendMode(BLEND);
   background(0);
-  blendMode(DIFFERENCE);
-
+  //blendMode(DIFFERENCE);
   videoManagers[0].displayVideo();
-  blendMode(DODGE);
+  blendMode(DIFFERENCE);
   videoManagers[1].displayVideo();
+  checkMoney();
+  checkMakeup();
 }
 
 // Simulate changing money/makeup state for testing
@@ -202,6 +210,74 @@ Tone.loaded().then(() => {
   checkMoney();
   checkMakeup();
 });
+
+// serial communication
+
+// ------------------- WebSerial Setup -------------------
+
+function setupWebSerial() {
+  if (!navigator.serial) {
+    alert("WebSerial is not supported in this browser. Try Chrome or MS Edge.");
+  }
+
+  navigator.serial.addEventListener("connect", portConnect);
+  navigator.serial.addEventListener("disconnect", portDisconnect);
+
+  serial.getPorts();
+  serial.on("noport", makePortButton);
+  serial.on("portavailable", openPort);
+  serial.on("requesterror", portError);
+  serial.on("data", serialEvent);
+  serial.on("close", makePortButton);
+}
+
+// ------------------- Port Button Functions -------------------
+
+function makePortButton() {
+  portButton = createButton("choose port");
+  portButton.position(10, 10);
+  portButton.mousePressed(choosePort);
+}
+
+function choosePort() {
+  if (portButton) portButton.show();
+  serial.requestPort();
+}
+
+function openPort() {
+  serial.open().then(() => {
+    console.log("port open");
+    if (portButton) portButton.hide();
+  });
+}
+
+// ------------------- Serial Event Functions -------------------
+
+function serialEvent() {
+  let inString = serial.readStringUntil("\r\n");
+  if (inString != null) {
+    let list = split(trim(inString), ",");
+    if (list.length > 1) {
+      money = float(list[0]);
+      makeup = float(list[1]);
+      serial.write("x");
+    }
+  }
+}
+
+function portConnect() {
+  console.log("port connected");
+  serial.getPorts();
+}
+
+function portDisconnect() {
+  serial.close();
+  console.log("port disconnected");
+}
+
+function portError(err) {
+  alert("Serial port error: " + err);
+}
 
 
 // let videosA = [];
