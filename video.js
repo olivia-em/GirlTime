@@ -1,8 +1,9 @@
 let videosA = [];
 let videosB = [];
 let totalVideos = 4;
-let money = 1; // Start at 1 so it doesn't play immediately
+let money = 1; 
 let makeup = 1;
+
 // p5.webserial library instance and related variables
 const serial = new p5.WebSerial(); // WebSerial library instance
 let portButton; // Button for port selection
