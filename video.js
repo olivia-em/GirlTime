@@ -1,5 +1,11 @@
-let videosA = [];
-let videosB = [];
+let categoryVideos = {
+  success: [],
+  beauty: [],
+  safety: [],
+  love: [],
+  family: [],
+  friends: []
+};
 let totalVideos = 12;
 let success = 1; 
 let beauty = 1;
@@ -47,26 +53,46 @@ const friendsSounds = new Tone.Players({
 
 // VideoManager class to handle selection and playback
 class VideoManager {
-  constructor() {
+  constructor(category) {
     this.selectedVideo = null;
+    this.category = category;
   }
 
-  chooseVideo(index,attribute) {
-    if (videosA.length > index && videosB.length > index && attribute === 0){
-      this.selectedVideo = videosA[index];
-    } else if (videosA.length > index && videosB.length > index && attribute === 1){
-      this.selectedVideo = videosB[index];
-    }
-    if (this.selectedVideo) {
-      this.selectedVideo.loop();
+  chooseRandomVideo() {
+    if (categoryVideos[this.category].length > 0) {
+      // Randomly select a video from the category's pool
+      const randomIndex = Math.floor(random(categoryVideos[this.category].length));
+      this.selectedVideo = categoryVideos[this.category][randomIndex];
+      
+      if (this.selectedVideo) {
+        this.selectedVideo.loop();
+      }
     }
   }
 
   stopVideo() {
     if (this.selectedVideo) {
       this.selectedVideo.stop();
+      // Make sure the video element is truly stopped
+      if (this.selectedVideo.elt) {
+        this.selectedVideo.elt.pause();
+        this.selectedVideo.elt.currentTime = 0;
+      }
       this.selectedVideo = null; // Reset for next selection
     }
+  }
+
+  disposeAllVideos() {
+    Object.keys(categoryVideos).forEach(category => {
+      categoryVideos[category].forEach(vid => {
+        if (vid && vid.elt) {
+          vid.stop();
+          vid.elt.pause();
+          vid.elt.currentTime = 0;
+          vid.elt.src = ""; // Clear the source
+        }
+      });
+    });
   }
 
   displayVideo() {
@@ -88,16 +114,15 @@ class VideoManager {
       image(this.selectedVideo, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
     }
   }
-  
 }
 
 // Create video managers
-let successVideos = new VideoManager();
-let beautyVideos = new VideoManager();
-let safetyVideos = new VideoManager();
-let loveVideos = new VideoManager();
-let familyVideos = new VideoManager();
-let friendsVideos = new VideoManager();
+let successVideos = new VideoManager('success');
+let beautyVideos = new VideoManager('beauty');
+let safetyVideos = new VideoManager('safety');
+let loveVideos = new VideoManager('love');
+let familyVideos = new VideoManager('family');
+let friendsVideos = new VideoManager('friends');
 
 let videoManagers = [successVideos, beautyVideos, safetyVideos, loveVideos, familyVideos, friendsVideos];
 
@@ -115,17 +140,25 @@ let familySoundKey = null;
 let friendsSoundKey = null;
 
 function preload() {
+  // Create separate video instances for each category
   for (let i = 1; i <= totalVideos; i++) {
     let path = 'images/' + i + '.mov';
-    let vid = createVideo(path);
-    vid.hide();
-    vid.speed(1);
-
-    if (i % 2 === 0) {
-      videosA.push(vid);
-    } else {
-      videosB.push(vid);
-    }
+    
+    // Create separate video instances for each category
+    categoryVideos.success.push(createVideo(path));
+    categoryVideos.beauty.push(createVideo(path));
+    categoryVideos.safety.push(createVideo(path));
+    categoryVideos.love.push(createVideo(path));
+    categoryVideos.family.push(createVideo(path));
+    categoryVideos.friends.push(createVideo(path));
+    
+    // Hide all videos
+    categoryVideos.success[i-1].hide();
+    categoryVideos.beauty[i-1].hide();
+    categoryVideos.safety[i-1].hide();
+    categoryVideos.love[i-1].hide();
+    categoryVideos.family[i-1].hide();
+    categoryVideos.friends[i-1].hide();
   }
 }
 
@@ -137,6 +170,7 @@ function setup() {
 
 
 // Function to play a **single chosen** success sound and loop it manually
+// Update the play functions to use random video selection
 function playSuccess() {
   if (success === 0 && !successVideos.selectedVideo) {
     if (!successSoundKey) {
@@ -147,18 +181,122 @@ function playSuccess() {
     currentSuccessSound = successSounds.player(successSoundKey);
     currentSuccessSound.start();
 
-    // Start video only when sound starts
-    if (successSoundKey === "shiver") {
-      successVideos.chooseVideo(0,0);
-    }
-    else {
-    successVideos.chooseVideo(0,1);
-    }
+    // Choose a random video from the success category
+    successVideos.chooseRandomVideo();
 
     // When sound ends, restart it if success is still 0
     currentSuccessSound.onstop = () => {
       if (success === 0) {
         currentSuccessSound.start(); // Restart same sound
+      }
+    };
+  }
+}
+
+// Similarly update the other play functions
+function playBeauty() {
+  if (beauty === 0 && !beautyVideos.selectedVideo) {
+    if (!beautySoundKey) {
+      let soundKeys = ["sweet", "sun"];
+      beautySoundKey = random(soundKeys); // Pick one sound and keep it
+    }
+
+    currentBeautySound = beautySounds.player(beautySoundKey);
+    currentBeautySound.start();
+
+    // Choose a random video from the beauty category
+    beautyVideos.chooseRandomVideo();
+
+    // When sound ends, restart it if beauty is still 0
+    currentBeautySound.onstop = () => {
+      if (beauty === 0) {
+        currentBeautySound.start(); // Restart same sound
+      }
+    };
+  }
+}
+
+function playSafety() {
+  if (safety === 0 && !safetyVideos.selectedVideo) {
+    if (!safetySoundKey) {
+      let soundKeys = ["shiver", "stronger"];
+      safetySoundKey = random(soundKeys); // Pick one sound and keep it
+    }
+
+    currentSafetySound = safetySounds.player(safetySoundKey);
+    currentSafetySound.start();
+
+    // Choose a random video from the safety category
+    safetyVideos.chooseRandomVideo();
+
+    // When sound ends, restart it if safety is still 0
+    currentSafetySound.onstop = () => {
+      if (safety === 0) {
+        currentSafetySound.start(); // Restart same sound
+      }
+    };
+  }
+}
+
+function playLove() {
+  if (love === 0 && !loveVideos.selectedVideo) {
+    if (!loveSoundKey) {
+      let soundKeys = ["sun", "sweet"];
+      loveSoundKey = random(soundKeys); // Pick one sound and keep it
+    }
+
+    currentLoveSound = loveSounds.player(loveSoundKey);
+    currentLoveSound.start();
+
+    // Choose a random video from the love category
+    loveVideos.chooseRandomVideo();
+
+    // When sound ends, restart it if love is still 0
+    currentLoveSound.onstop = () => {
+      if (love === 0) {
+        currentLoveSound.start(); // Restart same sound
+      }
+    };
+  }
+}
+
+function playFamily() {
+  if (family === 0 && !familyVideos.selectedVideo) {
+    if (!familySoundKey) {
+      let soundKeys = ["shiver", "stronger"];
+      familySoundKey = random(soundKeys);
+    }
+
+    currentFamilySound = familySounds.player(familySoundKey);
+    currentFamilySound.start();
+
+    // Choose a random video from the family category
+    familyVideos.chooseRandomVideo();
+
+    currentFamilySound.onstop = () => {
+      if (family === 0) {
+        currentFamilySound.start();
+      }
+    };
+  }
+}
+
+function playFriends() {
+  if (friends === 0 && !friendsVideos.selectedVideo) {
+    if (!friendsSoundKey) {
+      let soundKeys = ["sun", "sweet"];
+      friendsSoundKey = random(soundKeys);
+    }
+
+    currentFriendsSound = friendsSounds.player(friendsSoundKey);
+    currentFriendsSound.start();
+
+    // Choose a random video from the friends category
+    friendsVideos.chooseRandomVideo();
+
+    currentFriendsSound.onstop = () => {
+      if (friends === 0) {
+        currentFriendsSound.start();
       }
     };
   }
@@ -174,32 +312,7 @@ function stopSuccess() {
   successSoundKey = null; // Reset so next time a new sound is picked
 }
 
-// Function to play a **single chosen** beauty sound and loop it manually
-function playBeauty() {
-  if (beauty === 0 && !beautyVideos.selectedVideo) {
-    if (!beautySoundKey) {
-      let soundKeys = ["sweet", "sun"];
-      beautySoundKey = random(soundKeys); // Pick one sound and keep it
-    }
 
-    currentBeautySound = beautySounds.player(beautySoundKey);
-    currentBeautySound.start();
-
-    // Start video only when sound starts
-    if (beautySoundKey === "sun") {
-      beautyVideos.chooseVideo(1,0);
-    } else  {
-    beautyVideos.chooseVideo(1,1);
-    }
-
-    // When sound ends, restart it if beauty is still 0
-    currentBeautySound.onstop = () => {
-      if (beauty === 0) {
-        currentBeautySound.start(); // Restart same sound
-      }
-    };
-  }
-}
 
 // Function to stop beauty sounds & videos
 function stopBeauty() {
@@ -229,31 +342,6 @@ function checkBeauty() {
   }
 }
 // Function to play a **single chosen** safety sound and loop it manually
-function playSafety() {
-  if (safety === 0 && !safetyVideos.selectedVideo) {
-    if (!safetySoundKey) {
-      let soundKeys = ["shiver", "stronger"];
-      safetySoundKey = random(soundKeys); // Pick one sound and keep it
-    }
-
-    currentSafetySound = safetySounds.player(safetySoundKey);
-    currentSafetySound.start();
-
-    // Start video only when sound starts
-    if (safetySoundKey === "shiver") {
-      safetyVideos.chooseVideo(2, 0);
-    } else {
-      safetyVideos.chooseVideo(2, 1);
-    }
-
-    // When sound ends, restart it if safety is still 0
-    currentSafetySound.onstop = () => {
-      if (safety === 0) {
-        currentSafetySound.start(); // Restart same sound
-      }
-    };
-  }
-}
 
 // Function to stop safety sounds & videos
 function stopSafety() {
@@ -266,31 +354,6 @@ function stopSafety() {
 }
 
 // Function to play a **single chosen** love sound and loop it manually
-function playLove() {
-  if (love === 0 && !loveVideos.selectedVideo) {
-    if (!loveSoundKey) {
-      let soundKeys = ["sun", "sweet"];
-      loveSoundKey = random(soundKeys); // Pick one sound and keep it
-    }
-
-    currentLoveSound = loveSounds.player(loveSoundKey);
-    currentLoveSound.start();
-
-    // Start video only when sound starts
-    if (loveSoundKey === "sun") {
-      loveVideos.chooseVideo(3, 0);
-    } else {
-      loveVideos.chooseVideo(3, 1);
-    }
-
-    // When sound ends, restart it if love is still 0
-    currentLoveSound.onstop = () => {
-      if (love === 0) {
-        currentLoveSound.start(); // Restart same sound
-      }
-    };
-  }
-}
 
 // Function to stop love sounds & videos
 function stopLove() {
@@ -302,31 +365,6 @@ function stopLove() {
   loveSoundKey = null;
 }
 
-// Function to play a **single chosen** family sound and loop it manually
-function playFamily() {
-  if (family === 0 && !familyVideos.selectedVideo) {
-    if (!familySoundKey) {
-      let soundKeys = ["shiver", "stronger"];
-      familySoundKey = random(soundKeys);
-    }
-
-    currentFamilySound = familySounds.player(familySoundKey);
-    currentFamilySound.start();
-
-    // Start video only when sound starts
-    if (familySoundKey === "shiver") {
-      familyVideos.chooseVideo(4, 0);
-    } else {
-      familyVideos.chooseVideo(4, 1);
-    }
-
-    currentFamilySound.onstop = () => {
-      if (family === 0) {
-        currentFamilySound.start();
-      }
-    };
-  }
-}
 
 // Function to stop family sounds & videos
 function stopFamily() {
@@ -338,31 +376,7 @@ function stopFamily() {
   familySoundKey = null;
 }
 
-// Function to play a **single chosen** friends sound and loop it manually
-function playFriends() {
-  if (friends === 0 && !friendsVideos.selectedVideo) {
-    if (!friendsSoundKey) {
-      let soundKeys = ["sun", "sweet"];
-      friendsSoundKey = random(soundKeys);
-    }
 
-    currentFriendsSound = friendsSounds.player(friendsSoundKey);
-    currentFriendsSound.start();
-
-    // Start video only when sound starts
-    if (friendsSoundKey === "sun") {
-      friendsVideos.chooseVideo(5, 0);
-    } else {
-      friendsVideos.chooseVideo(5, 1);
-    }
-
-    currentFriendsSound.onstop = () => {
-      if (friends === 0) {
-        currentFriendsSound.start();
-      }
-    };
-  }
-}
 
 // Function to stop friends sounds & videos
 function stopFriends() {
@@ -433,8 +447,28 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
+function hardReset() {
+  // Stop all sounds
+  stopSuccess();
+  stopBeauty();
+  stopSafety();
+  stopLove();
+  stopFamily();
+  stopFriends();
+  
+  // Reset all videos
+  disposeAllVideos();
+  
+  // Re-initialize if needed
+  // You could reload the page or reinitialize key components
+}
+
 // Extend keyPressed to toggle new categories
 function keyPressed() {
+  if (key === 'r' || key === 'R') {
+    hardReset();
+  }
+
   if (key === 'f' || key === 'F') {
     let fs = fullscreen();
     fullscreen(!fs);
