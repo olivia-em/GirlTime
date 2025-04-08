@@ -1,4 +1,4 @@
-const int NUM_SENSORS = 2; // Define the number of sensors
+const int NUM_SENSORS = 6; // Define the number of sensors
 int base[NUM_SENSORS];     // Array to store baseline readings
 int current[NUM_SENSORS];  // Array to store current readings
 
@@ -9,7 +9,7 @@ void setup() {
   
   // Initialize baseline readings for all sensors
   for (int i = 0; i < NUM_SENSORS; i++) {
-    base[i] = analogRead(A0 + i); // Read initial sensor value and store it as the baseline
+    base[i] = analogRead(A7 - i); // Read initial sensor value and store it as the baseline
   }
 }
 
