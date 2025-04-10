@@ -15,8 +15,6 @@ let family = 1;
 let friends = 1;
 let videoPositions = new Map();
 let layoutGenerated = false;
-let fixedZoneAssignments = new Map(); // keeps each VM tied to a zone index
-
 
 // p5.webserial library instance and related variables
 const serial = new p5.WebSerial(); // WebSerial library instance
@@ -111,214 +109,52 @@ class VideoManager {
   }
 }
 
-
-// CHANGING POSITIONS
-
-// function generateLayout() {
-//   videoPositions.clear();
-//   fixedZoneAssignments.clear(); // Clear previous assignments to allow new random positions
-
-//   let zones = [
-//     { x: 20, y: 20, w: width / 3, h: height / 3 },                            // Top Left
-//     { x: width - width / 3 - 20, y: 20, w: width / 3, h: height / 3 },        // Top Right
-//     { x: 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 },      // Bottom Left
-//     { x: width - width / 3 - 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 }, // Bottom Right
-//     { x: width / 2 - width / 6, y: height / 2 - height / 6, w: width / 3, h: height / 3 },   // Center Small
-//     { x: 0, y: 0, w: width, h: height }                                      // Full Cover
-//   ];
-
-//   let activeManagers = videoManagers.filter(vm => vm.selectedVideo);
-  
-//   // Only use first 5 zones unless we have all 6 videos active
-//   let availableZones = activeManagers.length === 6 ? zones : zones.slice(0, 5);
-  
-//   // Create array of available zone indexes
-//   let availableIndexes = Array.from(Array(availableZones.length).keys());
-  
-//   // Randomly assign zones to active managers
-//   for (let vm of activeManagers) {
-//     if (availableIndexes.length > 0) {
-//       // Pick random index from available indexes
-//       let randomPosition = Math.floor(random(availableIndexes.length));
-//       let zoneIndex = availableIndexes[randomPosition];
-      
-//       // Remove used index from available ones
-//       availableIndexes.splice(randomPosition, 1);
-      
-//       let zone = zones[zoneIndex];
-
-//       // Aspect ratio logic
-//       let vid = vm.selectedVideo;
-//       let aspect = vid.width / vid.height;
-//       if (!isFinite(aspect)) aspect = 16 / 9;
-
-//       let targetW = zone.w;
-//       let targetH = targetW / aspect;
-
-//       if (targetH > zone.h) {
-//         targetH = zone.h;
-//         targetW = targetH * aspect;
-//       }
-
-//       let offsetX = zone.x + (zone.w - targetW) / 2;
-//       let offsetY = zone.y + (zone.h - targetH) / 2;
-
-//       videoPositions.set(vm, {
-//         x: offsetX,
-//         y: offsetY,
-//         w: targetW,
-//         h: targetH
-//       });
-//     }
-//   }
-
-//   return activeManagers.length > 0;
-// }
-
-// FIXED POSITION
-
 function generateLayout() {
+  // Clear all positions first
   videoPositions.clear();
-
-  let zones = [
-    { x: 20, y: 20, w: width / 3, h: height / 3 },                            // Top Left
-    { x: width - width / 3 - 20, y: 20, w: width / 3, h: height / 3 },        // Top Right
-    { x: 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 },      // Bottom Left
-    { x: width - width / 3 - 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 }, // Bottom Right
-    { x: width / 2 - width / 6, y: height / 2 - height / 6, w: width / 3, h: height / 3 },   // Center Small
-    { x: 0, y: 0, w: width, h: height }                                      // Full Cover
-  ];
-
+  
   let activeManagers = videoManagers.filter(vm => vm.selectedVideo);
+  let count = activeManagers.length;
+  if (count === 0) return false;
 
-  // Only use full cover (last zone) if we have 6 active managers
-  let availableZones = activeManagers.length === 6 ? zones : zones.slice(0, 5);
+  // Calculate a grid layout
+  let cols = ceil(sqrt(count));
+  let rows = ceil(count / cols);
+  let gridW = width / cols;
+  let gridH = height / rows;
 
-  for (let vm of activeManagers) {
-    if (!fixedZoneAssignments.has(vm)) {
-      // Get list of available indexes
-      let usedIndexes = Array.from(fixedZoneAssignments.values());
-      let availableIndexes = availableZones.map((_, i) => i).filter(i => !usedIndexes.includes(i));
-
-      if (availableIndexes.length > 0) {
-        let randomIndex = random(availableIndexes);
-        fixedZoneAssignments.set(vm, randomIndex);
-      }
+  for (let i = 0; i < activeManagers.length; i++) {
+    let col = i % cols;
+    let row = floor(i / cols);
+    let vm = activeManagers[i];
+    
+    // Ensure video is defined
+    if (!vm.selectedVideo || !vm.selectedVideo.width) continue;
+    
+    let aspect = vm.selectedVideo.width / vm.selectedVideo.height;
+    if (!isFinite(aspect)) aspect = 16/9; // fallback if dimensions not available
+    
+    // Calculate dimensions that fit within grid cell
+    let drawW = gridW * 0.9;
+    let drawH = drawW / aspect;
+    
+    // If too tall, constrain by height
+    if (drawH > gridH * 0.9) {
+      drawH = gridH * 0.9;
+      drawW = drawH * aspect;
     }
+    
+    // Center in grid cell with slight random variation
+    let x = col * gridW + (gridW - drawW) / 2 + random(-10, 10);
+    let y = row * gridH + (gridH - drawH) / 2 + random(-10, 10);
 
-    let zoneIndex = fixedZoneAssignments.get(vm);
-    if (zoneIndex === undefined || !zones[zoneIndex]) continue;
-
-    let zone = zones[zoneIndex];
-
-    // Aspect ratio logic
-    let vid = vm.selectedVideo;
-    let aspect = vid.width / vid.height;
-    if (!isFinite(aspect)) aspect = 16 / 9;
-
-    let targetW = zone.w;
-    let targetH = targetW / aspect;
-
-    if (targetH > zone.h) {
-      targetH = zone.h;
-      targetW = targetH * aspect;
-    }
-
-    let offsetX = zone.x + (zone.w - targetW) / 2;
-    let offsetY = zone.y + (zone.h - targetH) / 2;
-
-    videoPositions.set(vm, {
-      x: offsetX,
-      y: offsetY,
-      w: targetW,
-      h: targetH
-    });
+    videoPositions.set(vm, { x, y, w: drawW, h: drawH });
   }
 
   return activeManagers.length > 0;
 }
 
-// ORIGINAL
-
-// function generateLayout() {
-//   videoPositions.clear();
-
-//   let zones = [
-//     { x: 20, y: 20, w: width / 3, h: height / 3 },                            // Top Left
-//     { x: width - width / 3 - 20, y: 20, w: width / 3, h: height / 3 },        // Top Right
-//     { x: 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 },      // Bottom Left
-//     { x: width - width / 3 - 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 }, // Bottom Right
-//     { x: width / 2 - width / 6, y: height / 2 - height / 6, w: width / 3, h: height / 3 },   // Center Small
-//     { x: 0, y: 0, w: width, h: height }                                      // Full Cover
-//   ];
-
-//   let activeManagers = videoManagers.filter(vm => vm.selectedVideo);
-
-//   for (let vm of activeManagers) {
-//     if (!fixedZoneAssignments.has(vm)) {
-//       // Get list of available indexes
-//       let usedIndexes = Array.from(fixedZoneAssignments.values());
-//       let availableIndexes = zones.map((_, i) => i).filter(i => !usedIndexes.includes(i));
-
-//       if (availableIndexes.length > 0) {
-//         let randomIndex = random(availableIndexes);
-//         fixedZoneAssignments.set(vm, randomIndex);
-//       }
-//     }
-
-//     let zoneIndex = fixedZoneAssignments.get(vm);
-//     if (zoneIndex === undefined || !zones[zoneIndex]) continue;
-
-//     let zone = zones[zoneIndex];
-
-//     // Aspect ratio logic
-//     let vid = vm.selectedVideo;
-//     let aspect = vid.width / vid.height;
-//     if (!isFinite(aspect)) aspect = 16 / 9;
-
-//     let targetW = zone.w;
-//     let targetH = targetW / aspect;
-
-//     if (targetH > zone.h) {
-//       targetH = zone.h;
-//       targetW = targetH * aspect;
-//     }
-
-//     let offsetX = zone.x + (zone.w - targetW) / 2;
-//     let offsetY = zone.y + (zone.h - targetH) / 2;
-
-//     videoPositions.set(vm, {
-//       x: offsetX,
-//       y: offsetY,
-//       w: targetW,
-//       h: targetH
-//     });
-//   }
-
-//   return activeManagers.length > 0;
-// }
-
-
-// function generateLayout() {
-//   videoPositions.clear();
-
-//   let zones = [
-//     { x: 20, y: 20, w: width / 3, h: height / 3 },                            // Top Left
-//     { x: width - width / 3 - 20, y: 20, w: width / 3, h: height / 3 },        // Top Right
-//     { x: 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 },      // Bottom Left
-//     { x: width - width / 3 - 20, y: height - height / 3 - 20, w: width / 3, h: height / 3 }, // Bottom Right
-//     { x: width / 2 - width / 6, y: height / 2 - height / 6, w: width / 3, h: height / 3 },   // Center Small
-//     { x: 0, y: 0, w: width, h: height }                                      // Full Cover
-//   ];
-
-//   let activeManagers = videoManagers.filter(vm => vm.selectedVideo);
-//   for (let i = 0; i < activeManagers.length && i < zones.length; i++) {
-//     videoPositions.set(activeManagers[i], zones[i]);
-//   }
-
-//   return activeManagers.length > 0;
-// }
-
+// Replace the disposeAllVideos function
 function disposeAllVideos() {
   videoManagers.forEach(vm => {
     vm.stopVideo();
@@ -327,6 +163,7 @@ function disposeAllVideos() {
   layoutGenerated = false;
 }
 
+// Update the draw function to ensure layout is always generated/updated
 function draw() {
   blendMode(BLEND);
   background(0);
