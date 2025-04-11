@@ -1,3 +1,632 @@
+// // Optimized Collage Sketch for p5.js + Tone.js + WebSerial
+// // Improved for stability with rapid state changes
+
+// let categoryVideos = {
+//   success: [],
+//   beauty: [],
+//   safety: [],
+//   love: [],
+//   family: [],
+//   friends: []
+// };
+// let videosPerCategory = 5;
+// let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
+// let videosReady = false;
+// let usedLayouts = [];
+// let lastStates = {}; // Track previous states
+// let debounceTimers = {}; // Debounce timers for state changes
+// let debounceDelay = 200; // Reduced debounce for more responsive feel
+
+// // Serial Setup
+// const serial = new p5.WebSerial();
+// let portButton;
+// let inData = [], inString = [], outByte = 0;
+
+// // Audio Setup with Tone.js
+// Tone.Players.defaults = { 
+//   fadeOut: 0.3, // Shortened fadeout time for faster response
+//   fadeIn: 0.1,  // Shortened fadein for faster response
+//   loop: true    // Enable looping by default
+// };
+
+// const categories = ["success", "beauty", "safety", "love", "family", "friends"];
+// const soundFiles = {
+//   success: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
+//   beauty: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
+//   safety: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
+//   love: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
+//   family: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
+//   friends: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
+// };
+
+// const players = {};
+// const currentSounds = {};
+// const soundKeys = {};
+
+// // Initialize categories with default states
+// categories.forEach(cat => {
+//   lastStates[cat] = 1; // Start inactive
+//   players[cat] = new Tone.Players(soundFiles[cat]).toDestination();
+//   players[cat].volume.value = -6;
+//   currentSounds[cat] = null;
+//   soundKeys[cat] = null;
+//   debounceTimers[cat] = null;
+// });
+
+// // VideoManager Class - Improved for stability and error handling
+// class VideoManager {
+//   constructor(category) {
+//     this.category = category;
+//     this.selectedVideo = null;
+//     this.layout = null;
+//     this.isActive = false;
+//     this.transitionState = "idle"; // idle, starting, stopping
+//     this.transitionTimer = 0;
+//     this.retryCount = 0;
+//     this.maxRetries = 3;
+//   }
+
+//   chooseRandomVideo() {
+//     const vids = categoryVideos[this.category];
+//     if (!vids.length) {
+//       console.log(`No videos available for ${this.category}`);
+//       return;
+//     }
+
+//     // If we already have a video playing, keep it
+//     if (this.selectedVideo && this.isActive) return;
+    
+//     // Choose a random video
+//     const index = Math.floor(random(vids.length));
+//     this.selectedVideo = vids[index];
+    
+//     // Setup video
+//     this.selectedVideo.elt.muted = true;
+//     this.selectedVideo.volume(0);
+    
+//     // Preload the video without showing it yet
+//     this.selectedVideo.elt.currentTime = 0;
+    
+//     // Play with error handling and retry logic
+//     const playPromise = this.selectedVideo.elt.play();
+    
+//     if (playPromise !== undefined) {
+//       playPromise.catch(e => {
+//         console.log(`Play prevented for ${this.category}:`, e);
+//         if (this.retryCount < this.maxRetries) {
+//           this.retryCount++;
+//           setTimeout(() => this.chooseRandomVideo(), 500);
+//         } else {
+//           console.error(`Failed to play video for ${this.category} after ${this.maxRetries} attempts`);
+//           this.retryCount = 0;
+//         }
+//       });
+//     }
+    
+//     this.transitionState = "starting";
+//     this.transitionTimer = millis();
+    
+//     // Calculate layout
+//     this.assignLayout();
+//   }
+  
+//   assignLayout() {
+//     // More robust layout calculation
+//     let tries = 15, bestScore = -Infinity, best = null;
+    
+//     for (let i = 0; i < tries; i++) {
+//       let scale = random(0.25, 0.5);
+//       let w = width * scale;
+//       let h = w / (this.selectedVideo?.width / this.selectedVideo?.height || 1.78);
+//       let x = random(w / 2, width - w / 2);
+//       let y = random(h / 2, height - h / 2);
+      
+//       // Calculate a score based on distance from other videos
+//       let minDist = Infinity;
+//       for (let layout of usedLayouts) {
+//         let dist = Math.sqrt(Math.pow(x - layout.x, 2) + Math.pow(y - layout.y, 2));
+//         minDist = Math.min(minDist, dist);
+//       }
+      
+//       // Also consider distance from screen edges
+//       let edgeDist = Math.min(x, y, width - x, height - y);
+//       let score = minDist + edgeDist * 0.5;
+      
+//       if (score > bestScore) {
+//         bestScore = score;
+//         best = { x, y, w, h, scale };
+//       }
+//     }
+    
+//     this.layout = best;
+//   }
+
+// // Modified update method for VideoManager class
+// update() {
+//   // Handle transitions
+//   if (this.transitionState === "starting") {
+//     if (millis() - this.transitionTimer > 300) { // Shortened transition time
+//       if (this.selectedVideo) {
+//         this.selectedVideo.loop();
+//         this.isActive = true;
+//       }
+//       this.transitionState = "idle";
+//       this.retryCount = 0;
+//     }
+//   } else if (this.transitionState === "stopping") {
+//     if (millis() - this.transitionTimer > 200) { // Shortened transition time
+//       if (this.selectedVideo) {
+//         try {
+//           this.selectedVideo.stop();
+//           this.selectedVideo = null;
+//         } catch (e) {
+//           console.error(`Error stopping video for ${this.category}:`, e);
+//         }
+//       }
+//       this.isActive = false;
+//       this.transitionState = "idle";
+//       // Clear layout when stopping video
+//       this.layout = null;
+//     }
+//   }
+// }
+
+// // Modified stopVideo method to clear layout when stopping
+// stopVideo() {
+//   if (!this.selectedVideo) return;
+  
+//   // Don't immediately stop - prepare for stopping
+//   this.transitionState = "stopping";
+//   this.transitionTimer = millis();
+//   this.isActive = false;
+//   // We'll clear the layout once the video is fully stopped in the update method
+// }
+
+//   displayVideoAtLayout() {
+//     if (!this.selectedVideo || !this.isActive || !this.layout) return;
+    
+//     const { x, y, w, h } = this.layout;
+    
+//     // Add error handling for video display
+//     try {
+//       image(this.selectedVideo, x - w / 2, y - h / 2, w, h);
+//     } catch (e) {
+//       console.log(`Error displaying video for ${this.category}:`, e);
+//       this.stopVideo(); // Stop problematic video
+//     }
+//   }
+// }
+
+// // Video Manager Instances
+// const videoManagers = categories.map(c => new VideoManager(c));
+
+// // Preload with better error handling and logging
+// function preload() {
+//   let loadPromises = [];
+//   let loadedCount = 0;
+//   let totalVideos = categories.length * videosPerCategory;
+
+//   console.log(`Starting to load ${totalVideos} videos...`);
+  
+//   // Pre-initialize Tone.js
+//   Tone.start().catch(e => console.error("Tone.js start error:", e));
+  
+//   categories.forEach(category => {
+//     for (let i = 1; i <= videosPerCategory; i++) {
+//       const path = `images2/${category}/${i}.mov`;
+//       try {
+//         console.log(`Loading video: ${path}`);
+//         const vid = createVideo(path);
+//         vid.hide();
+//         vid.elt.preload = "auto";
+//         vid.elt.muted = true;
+//         vid.attribute("playsinline", true);
+//         vid.elt.autoplay = false;
+        
+//         // Set quality options for better performance
+//         if (vid.elt.canPlayType) {
+//           vid.elt.controlsList = "nodownload nofullscreen noremoteplayback";
+//         }
+        
+//         categoryVideos[category].push(vid);
+        
+//         loadPromises.push(new Promise(res => {
+//           vid.elt.onloadeddata = () => {
+//             loadedCount++;
+//             console.log(`Loaded ${loadedCount}/${totalVideos} videos`);
+//             res();
+//           };
+//           // Add timeout fallback
+//           setTimeout(res, 5000);
+//         }));
+//       } catch (e) {
+//         console.error(`Error loading video: ${path}`, e);
+//       }
+//     }
+//   });
+
+//   // Display progress and continue after timeout if needed
+//   Promise.race([
+//     Promise.all(loadPromises),
+//     new Promise(res => setTimeout(res, 12000))
+//   ]).then(() => {
+//     videosReady = true;
+//     console.log(`Videos loaded: ${loadedCount}/${totalVideos}`);
+    
+//     // Check if we have at least one video per category
+//     let missingCategories = [];
+//     categories.forEach(cat => {
+//       if (categoryVideos[cat].length === 0) {
+//         missingCategories.push(cat);
+//       }
+//     });
+    
+//     if (missingCategories.length > 0) {
+//       console.warn(`Warning: Missing videos for categories: ${missingCategories.join(', ')}`);
+//     }
+//   });
+// }
+
+// // Setup Delayed
+// function setupAfterVideos() {
+//   createCanvas(windowWidth, windowHeight);
+//   frameRate(30);
+//   setupWebSerial();
+  
+//   // Initialize Tone.js
+//   Tone.context.resume().catch(e => console.error("Tone.js resume error:", e));
+  
+//   // Setup initial states
+//   categories.forEach(cat => {
+//     window[cat] = 1; // Start all inactive
+//     lastStates[cat] = 1;
+//   });
+  
+//   console.log("Setup complete");
+// }
+
+// function draw() {
+//   if (!videosReady) {
+//     background(0);
+//     fill(255);
+//     textAlign(CENTER, CENTER);
+//     textSize(20);
+//     text("Loading videos...", width / 2, height / 2);
+//     return;
+//   }
+
+//   if (!window.hasSetupRun) {
+//     setupAfterVideos();
+//     window.hasSetupRun = true;
+//   }
+
+//   blendMode(BLEND);
+//   background(0);
+//   blendMode(DIFFERENCE);
+
+//   // Update all video managers
+//   videoManagers.forEach(vm => vm.update());
+  
+//   // Reset layouts for dynamic positioning
+//   usedLayouts = [];
+  
+//   // Dynamic layout based on active videos
+//   layoutVideos();
+  
+//   // Check state changes with debouncing
+//   checkStatesWithDebounce();
+// }
+
+// function layoutVideos() {
+//   const active = videoManagers.filter(vm => vm.isActive);
+  
+//   if (active.length <= 0) return;
+  
+//   // Clear used layouts before assigning new ones
+//   usedLayouts = [];
+  
+//   // Determine orientation
+//   const isLandscape = width > height;
+  
+//   // For first two videos (main focus) - give them equal sizing and position
+//   if (active.length >= 1) {
+//     const vm1 = active[0];
+    
+//     // Only assign layout if not already assigned (to prevent continuous updates)
+//     if (!vm1.layout) {
+//       if (isLandscape) {
+//         // Landscape: side by side (left)
+//         let w = width * 0.45; // 45% of screen width
+//         let aspect = vm1.selectedVideo?.width / vm1.selectedVideo?.height || 1.78;
+//         let h = w / aspect;
+//         vm1.layout = { x: width * 0.25, y: height / 2, w, h };
+//       } else {
+//         // Portrait: stacked (top)
+//         let w = width * 0.8; // 80% of screen width
+//         let aspect = vm1.selectedVideo?.width / vm1.selectedVideo?.height || 1.78;
+//         let h = w / aspect;
+//         vm1.layout = { x: width / 2, y: height * 0.25, w, h };
+//       }
+//       usedLayouts.push(vm1.layout);
+//     }
+//     vm1.displayVideoAtLayout();
+//   }
+  
+//   if (active.length >= 2) {
+//     const vm2 = active[1];
+    
+//     // Only assign layout if not already assigned
+//     if (!vm2.layout) {
+//       // Match the first video's dimensions for consistency
+//       const vm1 = active[0];
+//       const aspect = vm2.selectedVideo?.width / vm2.selectedVideo?.height || 1.78;
+      
+//       if (isLandscape) {
+//         // Landscape: side by side (right)
+//         let w = vm1.layout.w; // Same width as first video
+//         let h = w / aspect;
+//         vm2.layout = { x: width * 0.75, y: height / 2, w, h };
+//       } else {
+//         // Portrait: stacked (bottom)
+//         let w = vm1.layout.w; // Same width as first video
+//         let h = w / aspect;
+//         vm2.layout = { x: width / 2, y: height * 0.75, w, h };
+//       }
+//       usedLayouts.push(vm2.layout);
+//     }
+//     vm2.displayVideoAtLayout();
+//   }
+  
+//   // For remaining videos (smaller, scattered)
+//   for (let i = 2; i < active.length; i++) {
+//     const vm = active[i];
+    
+//     // Only assign layout if not already assigned
+//     if (!vm.layout) {
+//       vm.assignLayout();
+//       usedLayouts.push(vm.layout);
+//     }
+    
+//     vm.displayVideoAtLayout();
+//   }
+// }
+
+// function checkStatesWithDebounce() {
+//   categories.forEach(cat => {
+//     const currentState = window[cat];
+    
+//     // Only process if state changed
+//     if (currentState !== lastStates[cat]) {
+//       console.log(`State change for ${cat}: ${lastStates[cat]} -> ${currentState}`);
+      
+//       // Clear existing timer if there is one
+//       if (debounceTimers[cat]) {
+//         clearTimeout(debounceTimers[cat]);
+//       }
+      
+//       // Set new timer
+//       debounceTimers[cat] = setTimeout(() => {
+//         if (currentState === 0) {
+//           playCategory(cat);
+//         } else {
+//           stopCategory(cat);
+//         }
+//         lastStates[cat] = currentState;
+//         debounceTimers[cat] = null;
+//       }, debounceDelay);
+//     }
+//   });
+// }
+
+// // Playback Handling
+// function playCategory(cat) {
+//   const vm = videoManagers[categories.indexOf(cat)];
+  
+//   // Start video if not already active
+//   if (!vm.isActive) {
+//     console.log(`Starting video for ${cat}`);
+//     vm.chooseRandomVideo();
+//   }
+  
+//   // Handle sound with more robust approach
+//   if (!currentSounds[cat]) {
+//     if (!soundKeys[cat]) {
+//       const sounds = Object.keys(soundFiles[cat]);
+//       soundKeys[cat] = sounds[Math.floor(Math.random() * sounds.length)];
+//     }
+    
+//     try {
+//       const sound = players[cat].player(soundKeys[cat]);
+//       sound.fadeIn = 0.1; // Faster fade in
+//       sound.fadeOut = 0.3; // Keep modest fade out
+//       sound.loop = true;
+//       currentSounds[cat] = sound;
+      
+//       // Start sound with fade in
+//       sound.start();
+//     } catch (e) {
+//       console.error(`Error playing sound for ${cat}:`, e);
+//     }
+//   }
+// }
+
+// function stopCategory(cat) {
+//   const sound = currentSounds[cat];
+//   const vm = videoManagers[categories.indexOf(cat)];
+  
+//   // Stop sound with proper fade out
+//   if (sound) {
+//     try {
+//       const now = Tone.now();
+//       sound.stop(now + 0.3); // Schedule stop after fade
+//       currentSounds[cat] = null;
+//       soundKeys[cat] = null;
+//     } catch (e) {
+//       console.log(`Error stopping sound for ${cat}:`, e);
+//       currentSounds[cat] = null; // Clear reference even if error
+//     }
+//   }
+  
+//   // Stop video with proper handling
+//   if (vm.isActive) {
+//     vm.stopVideo();
+//   }
+// }
+
+// // Input Handling with simplified key mapping
+// function keyPressed() {
+//   const toggleMap = {
+//     '1': 'success', '2': 'beauty', '3': 'safety',
+//     '4': 'love', '5': 'family', '6': 'friends'
+//   };
+
+//   const cat = toggleMap[key];
+//   if (cat) {
+//     // Toggle the state
+//     window[cat] = window[cat] === 0 ? 1 : 0;
+//     console.log(`Toggled ${cat} to ${window[cat]}`);
+//   }
+
+//   if (key === 'r' || key === 'R') {
+//     console.log("Hard reset triggered");
+//     hardReset();
+//   }
+  
+//   if (key === 'f' || key === 'F') {
+//     let fs = fullscreen();
+//     fullscreen(!fs);
+//     setTimeout(() => resizeCanvas(windowWidth, windowHeight), 100);
+//     console.log("Fullscreen toggled");
+//   }
+// }
+
+// function hardReset() {
+//   // Properly clean up all resources
+//   categories.forEach(cat => {
+//     if (currentSounds[cat]) {
+//       try {
+//         currentSounds[cat].stop();
+//       } catch (e) {
+//         console.error(`Error stopping sound in reset for ${cat}:`, e);
+//       }
+//       currentSounds[cat] = null;
+//     }
+//     soundKeys[cat] = null;
+//     window[cat] = 1;
+//     lastStates[cat] = 1;
+    
+//     if (debounceTimers[cat]) {
+//       clearTimeout(debounceTimers[cat]);
+//       debounceTimers[cat] = null;
+//     }
+//   });
+  
+//   // Clear all videos
+//   videoManagers.forEach(vm => {
+//     vm.stopVideo();
+//     vm.isActive = false;
+//     vm.layout = null;
+//     vm.transitionState = "idle";
+//   });
+  
+//   usedLayouts = [];
+  
+//   console.log("Hard reset complete");
+// }
+
+// function windowResized() {
+//   resizeCanvas(windowWidth, windowHeight);
+//   console.log("Window resized, canvas resized");
+  
+//   // Force layout recalculation for all active videos on resize
+//   videoManagers.forEach(vm => {
+//     if (vm.isActive) {
+//       vm.layout = null; // Clear existing layout to force recalculation
+//     }
+//   });
+  
+//   // Clear used layouts to prevent conflicts with new layouts
+//   usedLayouts = [];
+// }
+
+// // Serial Setup with improved error handling
+// function setupWebSerial() {
+//   if (!navigator.serial) {
+//     console.log("WebSerial not supported in this browser");
+//     return;
+//   }
+  
+//   navigator.serial.addEventListener("connect", portConnect);
+//   navigator.serial.addEventListener("disconnect", portDisconnect);
+
+//   serial.getPorts();
+//   serial.on("noport", makePortButton);
+//   serial.on("portavailable", openPort);
+//   serial.on("requesterror", portError);
+//   serial.on("data", serialEvent);
+//   serial.on("close", makePortButton);
+  
+//   console.log("WebSerial setup complete");
+// }
+
+// function makePortButton() {
+//   if (portButton) portButton.remove(); // Remove any existing button
+  
+//   portButton = createButton("choose port");
+//   portButton.position(10, 10);
+//   portButton.mousePressed(choosePort);
+//   console.log("Port selection button created");
+// }
+
+// function choosePort() { 
+//   if (portButton) portButton.show(); 
+//   serial.requestPort(); 
+// }
+
+// function openPort() { 
+//   serial.open().then(() => {
+//     if (portButton) portButton.hide();
+//     console.log("Serial port opened successfully");
+//   }).catch(err => {
+//     console.error("Failed to open serial port:", err);
+//     makePortButton();
+//   });
+// }
+
+// function serialEvent() {
+//   try {
+//     const s = serial.readStringUntil("\r\n");
+//     if (s != null) {
+//       let vals = split(trim(s), ",");
+//       if (vals.length >= 6) {
+//         // Parse the values and update states
+//         [success, beauty, safety, love, family, friends] = vals.map(float);
+        
+//         // Send acknowledgment
+//         serial.write("x");
+//       }
+//     }
+//   } catch (e) {
+//     console.error("Serial read error:", e);
+//   }
+// }
+
+// function portConnect() { 
+//   console.log("Port connected");
+//   serial.getPorts(); 
+// }
+
+// function portDisconnect() { 
+//   console.log("Port disconnected");
+//   serial.close(); 
+// }
+
+// function portError(err) { 
+//   console.error("Serial port error:", err); 
+//   makePortButton();
+// }
+
+
 let categoryVideos = {
   success: [],
   beauty: [],
