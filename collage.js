@@ -1,5 +1,3 @@
-// Optimized Collage Sketch for p5.js + Tone.js + WebSerial
-// Author: GenerativeGPT for User
 
 let categoryVideos = {
   success: [],
