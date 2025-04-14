@@ -10,17 +10,27 @@ let octave = 2;
 let major = [0, 2, 4, 5, 7, 9, 11];
 let activeChords = {}; // Track active notes by key number
 let activeLoops = {}; // Track active loops by key number
-let reverb = new Tone.Reverb({
-  decay: 2,
-  preDelay: 0.01,
-}).toDestination();
+
+// REVERB
+// let reverb = new Tone.Reverb({
+//   decay: 2,
+//   preDelay: 0.01,
+// }).toDestination();
+
+// DELAY
+let feedbackDelay = new Tone.FeedbackDelay({
+  delayTime : 0.25 ,
+  maxDelay : 1
+  }).toDestination();
+
 let sampler = new Tone.Sampler({
   A1: "samples/synth/A1.mp3",
   B1: "samples/synth/B1.mp3"
 }, {
   volume: -6, // Lower overall volume to prevent clipping
 }).toDestination();
-sampler.connect(reverb);
+// sampler.connect(reverb);
+sampler.connect(feedbackDelay);
 
 // ATTEMPTED FREQUENCY ENVELOPE
 // let freqEnv = new Tone.FrequencyEnvelope({
@@ -110,15 +120,26 @@ function serialEvent() {
     if (myArray.length === 7) {
       inData = myArray.map(Number); // convert all to numbers and store in inData
 
-      // CONTROL REVERB WITH TOF SENSOR
+      // // CONTROL REVERB WITH TOF SENSOR
+      // if (inData[6] == 0) {
+      //   reverb.decay = 0.001;
+      // } else {
+      //   let mappedDecay = constrain(map(inData[6], 600, 10, 0.001, 2.5), 0.001, 2.5);
+      //   reverb.decay = mappedDecay;
+      //   // console.log(inData[6]);
+      // }
+      // console.log(reverb.decay);
+
+      // CONTROL DELAY WITH TOF SENSOR
       if (inData[6] == 0) {
-        reverb.decay = 0.001;
+        feedbackDelay.delayTime = 0.001;
       } else {
         let mappedDecay = constrain(map(inData[6], 600, 10, 0.001, 2.5), 0.001, 2.5);
-        reverb.decay = mappedDecay;
+        feedbackDelay.delayTime = mappedDelay;
         // console.log(inData[6]);
       }
-      console.log(reverb.decay);
+      console.log(feedbackDelay.delayTime);
+
     } else {
       print("Warning: Expected 7 values, received " + myArray.length);
     }
