@@ -9,6 +9,7 @@ let categoryVideos = {
 };
 let totalVideos = 12;
 let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
+let mappedDecay = 0.001;
 let videosReady = false;
 let usedLayouts = [];
 
@@ -21,12 +22,12 @@ let inData = [], inString = [], outByte = 0;
 Tone.Players.defaults = { fadeOut: 0.1 };
 const categories = ["success", "beauty", "safety", "love", "family", "friends"];
 const soundFiles = {
-  success: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
-  beauty: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
-  safety: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
-  love: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
-  family: { shiver: "sounds/synth1.mp3", stronger: "sounds/synth2.mp3" },
-  friends: { sun: "sounds/synth3.mp3", sweet: "sounds/synth4.mp3" },
+  success: { shiver: "sounds/friends.mp3", stronger: "sounds/friends-prish.mp3" },
+  beauty: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
+  safety: { shiver: "sounds/love.mp3", stronger: "sounds/friends.mp3" },
+  love: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
+  family: { shiver: "sounds/love.mp3", stronger: "sounds/friends.mp3" },
+  friends: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
 };
 const players = {};
 const currentSounds = {};
@@ -174,38 +175,38 @@ function checkStates() {
   });
 }
 
-// Playback Handling
-function playCategory(cat) {
-  const vm = videoManagers[categories.indexOf(cat)];
-  if (!vm.selectedVideo && window[cat] === 0) {
-    if (!soundKeys[cat]) soundKeys[cat] = random(Object.keys(soundFiles[cat]));
-    const sound = players[cat].player(soundKeys[cat]);
-    currentSounds[cat] = sound;
+// // Playback Handling
+// function playCategory(cat) {
+//   const vm = videoManagers[categories.indexOf(cat)];
+//   if (!vm.selectedVideo && window[cat] === 0) {
+//     if (!soundKeys[cat]) soundKeys[cat] = random(Object.keys(soundFiles[cat]));
+//     const sound = players[cat].player(soundKeys[cat]);
+//     currentSounds[cat] = sound;
 
-    vm.chooseRandomVideo();
+//     vm.chooseRandomVideo();
 
-    setTimeout(() => {
-      if (window[cat] === 0) {
-        sound.start();
-        sound.onstop = () => {
-          if (window[cat] === 0) setTimeout(() => sound.start(), 50);
-        };
-      }
-    }, 100);
-  }
-}
+//     setTimeout(() => {
+//       if (window[cat] === 0) {
+//         sound.start();
+//         sound.onstop = () => {
+//           if (window[cat] === 0) setTimeout(() => sound.start(), 50);
+//         };
+//       }
+//     }, 100);
+//   }
+// }
 
-function stopCategory(cat) {
-  const sound = currentSounds[cat];
-  const vm = videoManagers[categories.indexOf(cat)];
-  if (sound) {
-    sound.volume.rampTo(-40, 0.1);
-    setTimeout(() => sound.stop(), 150);
-    currentSounds[cat] = null;
-    soundKeys[cat] = null;
-  }
-  vm.stopVideo();
-}
+// function stopCategory(cat) {
+//   const sound = currentSounds[cat];
+//   const vm = videoManagers[categories.indexOf(cat)];
+//   if (sound) {
+//     sound.volume.rampTo(-40, 0.1);
+//     setTimeout(() => sound.stop(), 150);
+//     currentSounds[cat] = null;
+//     soundKeys[cat] = null;
+//   }
+//   vm.stopVideo();
+// }
 
 // Input Handling
 function keyPressed() {
@@ -258,12 +259,226 @@ function serialEvent() {
   const s = serial.readStringUntil("\r\n");
   if (s != null) {
     let vals = split(trim(s), ",");
-    if (vals.length > 5) {
+    if (vals.length > 6) {
       [success, beauty, safety, love, family, friends] = vals.map(float);
+      
+      // CONTROL DELAY WITH TOF SENSOR
+      if (float(vals[6]) === 0) {
+        feedbackDelay.delayTime.value = 0.001;
+      } else {
+        let mappedDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 1), 0.001, 1);
+        feedbackDelay.delayTime.value = mappedDecay;
+      }
+      console.log('Delay time:', feedbackDelay.delayTime.value);
+      
       serial.write("x");
     }
   }
 }
+
+// function serialEvent() {
+//   const s = serial.readStringUntil("\r\n");
+//   if (s != null) {
+//     let vals = split(trim(s), ",");
+//     if (vals.length > 6) {
+//       [success, beauty, safety, love, family, friends, mappedDecay] = vals.map(float);
+//       serial.write("x");
+//     }
+//   }
+// }
+
+
+//  // CONTROL DELAY WITH TOF SENSOR
+//  if (inData[6] == 0) {
+//   feedbackDelay.delayTime = 0.001;
+// } else {
+//   let mappedDecay = constrain(map(inData[6], 600, 10, 0.001, 2.5), 0.001, 2.5);
+//   feedbackDelay.delayTime = mappedDelay;
+//   // console.log(inData[6]);
+// }
+// console.log(feedbackDelay.delayTime);
+
 function portConnect() { serial.getPorts(); }
 function portDisconnect() { serial.close(); }
 function portError(err) { console.error("Serial port error:", err); }
+
+
+
+/// ALL AUDIO STUFF
+
+
+let rootNote;
+let octave = 2;
+let major = [0, 2, 4, 5, 7, 9, 11];
+let activeChords = {}; // Track active notes by key number
+let activeLoops = {}; // Track active loops by key number
+
+let feedbackDelay = new Tone.FeedbackDelay({
+  delayTime : 0.25 ,
+  maxDelay : 1
+  }).toDestination();
+
+  let sampler = new Tone.Sampler({
+    //A1: "samples/synth/A1.mp3",
+    B1: "samples/synth/B1.mp3"
+  }, {
+    volume: -25, // Lower overall volume to prevent clipping
+  }).toDestination();
+  // sampler.connect(reverb);
+  sampler.connect(feedbackDelay);
+
+
+  // Add category to scale position mapping
+const categoryToScale = {
+  'success': 0,
+  'beauty': 1,
+  'safety': 2,
+  'love': 3,
+  'family': 4,
+  'friends': 5
+};
+
+
+Tone.Transport.start();
+
+// Modify playCategory function to include chord triggering
+function playCategory(cat) {
+  const vm = videoManagers[categories.indexOf(cat)];
+  if (!vm.selectedVideo && window[cat] === 0) {
+    // Original video and sound logic
+   if (!soundKeys[cat]) soundKeys[cat] = random(Object.keys(soundFiles[cat]));
+    const sound = players[cat].player(soundKeys[cat]);
+    currentSounds[cat] = sound;
+    vm.chooseRandomVideo();
+
+    // Add chord logic
+    if (Object.keys(activeChords).length === 0) {
+      rootNote = 36 + int(random(0, 12)); // C3–B3
+    } else if (!rootNote) {
+      rootNote = 36 + int(random(0, 12));
+    }
+    
+    playChord(cat, categoryToScale[cat]);
+
+    // Original sound continuation logic
+    setTimeout(() => {
+      if (window[cat] === 0) {
+        sound.start();
+        sound.onstop = () => {
+          if (window[cat] === 0) setTimeout(() => sound.start(), 50);
+        };
+      }
+    }, 100);
+  }
+}
+
+// Modify stopCategory to include chord stopping
+function stopCategory(cat) {
+  // Original sound and video stopping logic
+  const sound = currentSounds[cat];
+  const vm = videoManagers[categories.indexOf(cat)];
+  if (sound) {
+    sound.volume.rampTo(-40, 0.1);
+    setTimeout(() => sound.stop(), 150);
+    currentSounds[cat] = null;
+    soundKeys[cat] = null;
+  }
+  vm.stopVideo();
+
+  // Add chord stopping logic
+  stopChord(cat);
+  
+  // Reset rootNote if no more active chords
+  if (Object.keys(activeChords).length === 0) {
+    rootNote = null;
+  }
+}
+
+  // function keyPressed() {
+  //   if (key >= '1' && key <= '6') {
+  //     let scalePos = int(key) - 1;
+      
+  //     if (activeChords[key]) {
+  //       // If this chord is already active, turn it off
+  //       stopChord(key);
+        
+  //       // If this was the last active chord, reset rootNote
+  //       if (Object.keys(activeChords).length === 0) {
+  //         rootNote = null;
+  //       }
+  //     } else {
+  //       // If no chords are active, pick a new root
+  //       if (Object.keys(activeChords).length === 0) {
+  //         rootNote = 36 + int(random(0, 12)); // C3–B3
+  //       }
+  //       // If rootNote hasn't been set yet (shouldn't happen now), set it
+  //       else if (!rootNote) {
+  //         rootNote = 36 + int(random(0, 12));
+  //       }
+        
+  //       // Play the chord
+  //       playChord(key, scalePos);
+  //     }
+  //   }
+  // }
+
+  function playChord(key, scalePos) {
+    // Calculate chord notes
+    let root = getNote(scalePos);
+    let third = getNote(scalePos + 2);
+    let fifth = getNote(scalePos + 4);
+    let chord = [root, third, fifth];
+    
+    // Play chord immediately
+    chord.forEach(note => {
+      sampler.triggerAttack(note);
+    });
+    
+    // Store active chord notes
+    activeChords[key] = chord;
+    
+    // Create a loop that will release the current notes and trigger new ones
+    // This ensures the chord restarts but still ends cleanly when turned off
+    let loop = new Tone.Loop(time => {
+      // First, release currently playing notes
+      chord.forEach(note => {
+        sampler.triggerRelease(note,time );
+      });
+      
+      // Then trigger them again (slightly after to avoid overlapping)
+      chord.forEach(note => {
+        sampler.triggerAttack(note, time + 0.05);
+      });
+    }, "1n").start(0); // Wait 2n before first loop execution
+    
+    // Store the loop
+    activeLoops[key] = loop;
+  }
+  
+  function stopChord(key) {
+    // Immediately release all notes in the chord
+    if (activeChords[key]) {
+      activeChords[key].forEach(note => {
+        sampler.triggerRelease(note);
+      });
+      delete activeChords[key];
+    }
+    
+    // Stop the loop
+    if (activeLoops[key]) {
+      activeLoops[key].stop();
+      delete activeLoops[key];
+    }
+  }
+  
+  function getNote(scalePos) {
+    let pos = scalePos % major.length;
+    if (pos < 0) pos += major.length;
+    
+    let octaveOffset = Math.floor(scalePos / major.length);
+    let midiNote = rootNote + major[pos] + (octaveOffset * 12);
+    
+    return Tone.Frequency(midiNote, "midi").toNote();
+  }
+  
+
