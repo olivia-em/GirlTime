@@ -10,6 +10,7 @@ let categoryVideos = {
 let totalVideos = 12;
 let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
 let mappedDecay = 0.001;
+let revDecay = 0.001;
 let videosReady = false;
 let usedLayouts = [];
 
@@ -175,39 +176,6 @@ function checkStates() {
   });
 }
 
-// // Playback Handling
-// function playCategory(cat) {
-//   const vm = videoManagers[categories.indexOf(cat)];
-//   if (!vm.selectedVideo && window[cat] === 0) {
-//     if (!soundKeys[cat]) soundKeys[cat] = random(Object.keys(soundFiles[cat]));
-//     const sound = players[cat].player(soundKeys[cat]);
-//     currentSounds[cat] = sound;
-
-//     vm.chooseRandomVideo();
-
-//     setTimeout(() => {
-//       if (window[cat] === 0) {
-//         sound.start();
-//         sound.onstop = () => {
-//           if (window[cat] === 0) setTimeout(() => sound.start(), 50);
-//         };
-//       }
-//     }, 100);
-//   }
-// }
-
-// function stopCategory(cat) {
-//   const sound = currentSounds[cat];
-//   const vm = videoManagers[categories.indexOf(cat)];
-//   if (sound) {
-//     sound.volume.rampTo(-40, 0.1);
-//     setTimeout(() => sound.stop(), 150);
-//     currentSounds[cat] = null;
-//     soundKeys[cat] = null;
-//   }
-//   vm.stopVideo();
-// }
-
 // Input Handling
 function keyPressed() {
   const map = { '1': 'success', '2': 'success', '3': 'beauty', '4': 'beauty',
@@ -265,38 +233,20 @@ function serialEvent() {
       // CONTROL DELAY WITH TOF SENSOR
       if (float(vals[6]) === 0) {
         feedbackDelay.delayTime.value = 0.001;
+        reverb.decay = 0.001;
       } else {
         let mappedDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 1), 0.001, 1);
+        let revDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 2.5), 0.001, 2.5);
         feedbackDelay.delayTime.value = mappedDecay;
+        reverb.decay = revDecay;
       }
       console.log('Delay time:', feedbackDelay.delayTime.value);
+      console.log('reverb:', reverb.decay);
       
       serial.write("x");
     }
   }
 }
-
-// function serialEvent() {
-//   const s = serial.readStringUntil("\r\n");
-//   if (s != null) {
-//     let vals = split(trim(s), ",");
-//     if (vals.length > 6) {
-//       [success, beauty, safety, love, family, friends, mappedDecay] = vals.map(float);
-//       serial.write("x");
-//     }
-//   }
-// }
-
-
-//  // CONTROL DELAY WITH TOF SENSOR
-//  if (inData[6] == 0) {
-//   feedbackDelay.delayTime = 0.001;
-// } else {
-//   let mappedDecay = constrain(map(inData[6], 600, 10, 0.001, 2.5), 0.001, 2.5);
-//   feedbackDelay.delayTime = mappedDelay;
-//   // console.log(inData[6]);
-// }
-// console.log(feedbackDelay.delayTime);
 
 function portConnect() { serial.getPorts(); }
 function portDisconnect() { serial.close(); }
@@ -312,6 +262,11 @@ let octave = 2;
 let major = [0, 2, 4, 5, 7, 9, 11];
 let activeChords = {}; // Track active notes by key number
 let activeLoops = {}; // Track active loops by key number
+
+let reverb = new Tone.Reverb({
+  decay: 2,
+  preDelay: 0.01,
+}).toDestination();
 
 let feedbackDelay = new Tone.FeedbackDelay({
   delayTime : 0.25 ,
@@ -394,33 +349,6 @@ function stopCategory(cat) {
   }
 }
 
-  // function keyPressed() {
-  //   if (key >= '1' && key <= '6') {
-  //     let scalePos = int(key) - 1;
-      
-  //     if (activeChords[key]) {
-  //       // If this chord is already active, turn it off
-  //       stopChord(key);
-        
-  //       // If this was the last active chord, reset rootNote
-  //       if (Object.keys(activeChords).length === 0) {
-  //         rootNote = null;
-  //       }
-  //     } else {
-  //       // If no chords are active, pick a new root
-  //       if (Object.keys(activeChords).length === 0) {
-  //         rootNote = 36 + int(random(0, 12)); // C3–B3
-  //       }
-  //       // If rootNote hasn't been set yet (shouldn't happen now), set it
-  //       else if (!rootNote) {
-  //         rootNote = 36 + int(random(0, 12));
-  //       }
-        
-  //       // Play the chord
-  //       playChord(key, scalePos);
-  //     }
-  //   }
-  // }
 
   function playChord(key, scalePos) {
     // Calculate chord notes
