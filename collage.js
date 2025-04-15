@@ -171,6 +171,7 @@ blendMode(BLEND);
 
 function checkStates() {
   categories.forEach(cat => {
+    console.log(cat, window[cat]);
     if (window[cat] === 0) playCategory(cat);
     else stopCategory(cat);
   });
@@ -228,7 +229,7 @@ function serialEvent() {
   if (s != null) {
     let vals = split(trim(s), ",");
     if (vals.length > 6) {
-      [success, beauty, safety, love, family, friends] = vals.map(float);
+      [window.success, window.beauty, window.safety, window.love, window.family, window.friends] = vals.map(float);
       
       // CONTROL DELAY WITH TOF SENSOR
       if (float(vals[6]) === 0) {
@@ -247,6 +248,7 @@ function serialEvent() {
     }
   }
 }
+
 
 function portConnect() { serial.getPorts(); }
 function portDisconnect() { serial.close(); }
