@@ -7,7 +7,7 @@ let categoryVideos = {
   family: [],
   friends: []
 };
-let totalVideos = 12;
+let totalVideos = 4;
 let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
 let mappedDecay = 0.001;
 let revDecay = 0.001;
@@ -104,9 +104,10 @@ const videoManagers = categories.map(c => new VideoManager(c));
 // Preload
 function preload() {
   let loadPromises = [];
-  for (let i = 1; i <= totalVideos; i++) {
-    const path = 'images/' + i + '.mov';
-    for (let category in categoryVideos) {
+
+  for (let category of categories) {
+    for (let i = 1; i <= totalVideos; i++) {
+      const path = `images2/${category}/${i}.mp4`;
       const vid = createVideo(path);
       vid.hide();
       vid.elt.preload = "metadata";
@@ -121,6 +122,7 @@ function preload() {
 
   Promise.all(loadPromises).then(() => videosReady = true);
 }
+
 
 // Setup Delayed
 function setupAfterVideos() {
