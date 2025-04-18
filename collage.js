@@ -60,7 +60,8 @@ class VideoManager {
     if (!this.layout) {
       let tries = 10, best = null;
       for (let i = 0; i < tries; i++) {
-        let scale = random(0.25, 0.5);
+        let scale = random(0.35, 0.65);
+        //let scale = random(0.25, 0.5);
         let w = width * scale;
         let h = w / (this.selectedVideo.width / this.selectedVideo.height || 1.78);
         let x = random(w / 2, width - w / 2);
