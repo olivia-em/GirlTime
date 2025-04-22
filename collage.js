@@ -102,28 +102,23 @@ function isTooClose(x, y, w, h) {
 // Video Manager Instances
 const videoManagers = categories.map(c => new VideoManager(c));
 
-// Preload
 function preload() {
-  let loadPromises = [];
-
   for (let category of categories) {
     for (let i = 1; i <= totalVideos; i++) {
       const path = `images2/${category}/${i}.mp4`;
-      const vid = createVideo(path);
+
+      let vid = createVideo(path)
       vid.hide();
       vid.elt.preload = "metadata";
       vid.elt.muted = true;
       vid.attribute("playsinline", true);
       vid.elt.autoplay = false;
       categoryVideos[category].push(vid);
-
-      loadPromises.push(new Promise(res => vid.elt.onloadedmetadata = res));
     }
   }
-
-  Promise.all(loadPromises).then(() => videosReady = true);
+  videosReady = true;
+  console.log("Videos loaded");
 }
-
 
 // Setup Delayed
 function setupAfterVideos() {
@@ -174,7 +169,7 @@ blendMode(BLEND);
 
 function checkStates() {
   categories.forEach(cat => {
-    console.log(cat, window[cat]);
+    //console.log(cat, window[cat]);
     if (window[cat] === 0) playCategory(cat);
     else stopCategory(cat);
   });
@@ -279,8 +274,7 @@ let feedbackDelay = new Tone.FeedbackDelay({
   }).toDestination();
 
   let sampler = new Tone.Sampler({
-    //A1: "samples/synth/A1.mp3",
-    B1: "samples/synth/B1.mp3"
+    C2: "samples/synth/C2fog.mp3"
   }, {
     volume: -25, // Lower overall volume to prevent clipping
   }).toDestination();
