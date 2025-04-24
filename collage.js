@@ -23,12 +23,12 @@ let inData = [], inString = [], outByte = 0;
 Tone.Players.defaults = { fadeOut: 0.1 };
 const categories = ["success", "beauty", "safety", "love", "family", "friends"];
 const soundFiles = {
-  success: { shiver: "sounds/friends.mp3", stronger: "sounds/friends-prish.mp3" },
-  beauty: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
-  safety: { shiver: "sounds/love.mp3", stronger: "sounds/friends.mp3" },
-  love: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
-  family: { shiver: "sounds/love.mp3", stronger: "sounds/friends.mp3" },
-  friends: { sun: "sounds/love.mp3", sweet: "sounds/friends.mp3" },
+  success: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
+  beauty: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
+  safety: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
+  love: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
+  family: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
+  friends: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
 };
 const players = {};
 const currentSounds = {};
@@ -94,7 +94,7 @@ class VideoManager {
   }
 }
 
-// Helpers
+// Helper
 function isTooClose(x, y, w, h) {
   return usedLayouts.some(l => abs(x - l.x) < (w + l.w) / 2 && abs(y - l.y) < (h + l.h) / 2);
 }
@@ -263,22 +263,26 @@ let major = [0, 2, 4, 5, 7, 9, 11];
 let activeChords = {}; // Track active notes by key number
 let activeLoops = {}; // Track active loops by key number
 
+
 let reverb = new Tone.Reverb({
-  decay: 2,
-  preDelay: 0.01,
+  decay: 0.001,
+  preDelay: 0.1,
 }).toDestination();
 
 let feedbackDelay = new Tone.FeedbackDelay({
-  delayTime : 0.25 ,
+  delayTime : 0,
   maxDelay : 1
   }).toDestination();
+
+ 
 
   let sampler = new Tone.Sampler({
     C2: "samples/synth/C2fog.mp3"
   }, {
-    volume: -25, // Lower overall volume to prevent clipping
-  }).toDestination();
-  // sampler.connect(reverb);
+    volume: -30,
+    }).toDestination();
+  
+  sampler.connect(reverb);
   sampler.connect(feedbackDelay);
 
 
@@ -292,7 +296,7 @@ const categoryToScale = {
   'friends': 5
 };
 
-
+Tone.Transport.bpm.value = 120; 
 Tone.Transport.start();
 
 // Modify playCategory function to include chord triggering
@@ -305,7 +309,7 @@ function playCategory(cat) {
     currentSounds[cat] = sound;
     vm.chooseRandomVideo();
 
-    // Add chord logic
+    // random chord logic
     if (Object.keys(activeChords).length === 0) {
       rootNote = 36 + int(random(0, 12)); // C3–B3
     } else if (!rootNote) {
@@ -314,21 +318,19 @@ function playCategory(cat) {
     
     playChord(cat, categoryToScale[cat]);
 
-    // Original sound continuation logic
+    // sound continuation logic
     setTimeout(() => {
       if (window[cat] === 0) {
+        sound.volume.value = -6;  // Restore original volume
         sound.start();
         sound.onstop = () => {
           if (window[cat] === 0) setTimeout(() => sound.start(), 50);
         };
       }
     }, 100);
-  }
-}
+}}
 
-// Modify stopCategory to include chord stopping
 function stopCategory(cat) {
-  // Original sound and video stopping logic
   const sound = currentSounds[cat];
   const vm = videoManagers[categories.indexOf(cat)];
   if (sound) {
@@ -339,7 +341,6 @@ function stopCategory(cat) {
   }
   vm.stopVideo();
 
-  // Add chord stopping logic
   stopChord(cat);
   
   // Reset rootNote if no more active chords
@@ -348,56 +349,38 @@ function stopCategory(cat) {
   }
 }
 
+function playChord(key, scalePos) {
+  let root = getNote(scalePos);
+  let third = getNote(scalePos + 2);
+  let fifth = getNote(scalePos + 4);
+  let chord = [root,fifth];
 
-  function playChord(key, scalePos) {
-    // Calculate chord notes
-    let root = getNote(scalePos);
-    let third = getNote(scalePos + 2);
-    let fifth = getNote(scalePos + 4);
-    let chord = [root, third, fifth];
-    
-    // Play chord immediately
+  activeChords[key] = chord;
+
+  let loop = new Tone.Loop(time => {
     chord.forEach(note => {
-      sampler.triggerAttack(note);
+      sampler.triggerAttack(note, time);
     });
-    
-    // Store active chord notes
-    activeChords[key] = chord;
-    
-    // Create a loop that will release the current notes and trigger new ones
-    // This ensures the chord restarts but still ends cleanly when turned off
-    let loop = new Tone.Loop(time => {
-      // First, release currently playing notes
-      chord.forEach(note => {
-        sampler.triggerRelease(note,time );
-      });
-      
-      // Then trigger them again (slightly after to avoid overlapping)
-      chord.forEach(note => {
-        sampler.triggerAttack(note, time + 0.05);
-      });
-    }, "1n").start(0); // Wait 2n before first loop execution
-    
-    // Store the loop
-    activeLoops[key] = loop;
+  }, "1n").start();
+
+  activeLoops[key] = loop;
+}
+
+function stopChord(key) {
+  if (activeChords[key]) {
+    activeChords[key].forEach(note => {
+      sampler.triggerRelease(note);
+    });
+    delete activeChords[key];
   }
-  
-  function stopChord(key) {
-    // Immediately release all notes in the chord
-    if (activeChords[key]) {
-      activeChords[key].forEach(note => {
-        sampler.triggerRelease(note);
-      });
-      delete activeChords[key];
-    }
-    
-    // Stop the loop
-    if (activeLoops[key]) {
-      activeLoops[key].stop();
-      delete activeLoops[key];
-    }
+
+  if (activeLoops[key]) {
+    activeLoops[key].stop();
+    activeLoops[key].cancel();
+    Tone.Transport.clear(activeLoops[key]);
+    delete activeLoops[key];
   }
-  
+} 
   function getNote(scalePos) {
     let pos = scalePos % major.length;
     if (pos < 0) pos += major.length;
@@ -409,3 +392,48 @@ function stopCategory(cat) {
   }
   
 
+// function playChord(key, scalePos) {
+//   // Calculate chord notes
+//   let root = getNote(scalePos);
+//   let third = getNote(scalePos + 2);
+//   let fifth = getNote(scalePos + 4);
+//   let chord = [root];
+  
+//   // Play chord immediately with longer attack and release
+//   // chord.forEach(note => {
+//   //     sampler.triggerAttackRelease(note, "2n");
+//   // });
+  
+//   // Store active chord notes
+//   activeChords[key] = chord;
+  
+//   // Create a loop with better timing
+//   let loop = new Tone.Loop(time => {
+//       chord.forEach(note => {
+//           // Use triggerAttackRelease with longer duration and overlapping
+//           sampler.triggerAttackRelease(note, "1n", time);
+//       });
+//   }, "1n").start(); // Use half note duration instead of whole note
+  
+//   // Store the loop
+//   activeLoops[key] = loop;
+// }
+
+  
+// function stopChord(key) {
+//   if (activeChords[key]) {
+//     activeChords[key].forEach(note => {
+//       sampler.triggerRelease(note);
+//     });
+//     delete activeChords[key];
+//   }
+
+//   if (activeLoops[key]) {
+//     activeLoops[key].stop();
+//     activeLoops[key].cancel(); // Ensures no further scheduled events
+//     Tone.Transport.clear(activeLoops[key]); // Remove from transport
+//     delete activeLoops[key];
+//   }
+// }
+
+ 
