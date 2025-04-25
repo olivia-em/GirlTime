@@ -221,9 +221,18 @@ function draw() {
       else stopCategory(cat);
     });
   }
+
+  let audioStarted = false;
   
   // Input Handling
   function keyPressed() {
+    if (!audioStarted) {
+      Tone.start().then(() => {
+        console.log("Audio started via keypress");
+        audioStarted = true;
+      });
+    }
+  
     const map = { '1': 'success', '2': 'success', '3': 'beauty', '4': 'beauty',
                   '5': 'safety', '6': 'safety', '7': 'love', '8': 'love',
                   '9': 'family', '0': 'family', '-': 'friends', '=': 'friends' };
