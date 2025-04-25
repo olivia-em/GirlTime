@@ -9,7 +9,7 @@ let categoryVideos = {
 };
 let totalVideos = 4;
 let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
-let mappedDecay = 0.001;
+let mappedDecay = 0.5;
 let revDecay = 0.001;
 let videosReady = false;
 let usedLayouts = [];
@@ -87,14 +87,14 @@ class VideoManager {
     }
   }
 
-  displayVideoAtLayout() {
+   displayVideoAtLayout() {
     if (!this.selectedVideo || !this.layout) return;
     const { x, y, w, h } = this.layout;
     image(this.selectedVideo, x - w / 2, y - h / 2, w, h);
   }
 }
 
-// Helper
+
 function isTooClose(x, y, w, h) {
   return usedLayouts.some(l => abs(x - l.x) < (w + l.w) / 2 && abs(y - l.y) < (h + l.h) / 2);
 }
@@ -120,12 +120,13 @@ function preload() {
   console.log("Videos loaded");
 }
 
+
 // Setup Delayed
 function setupAfterVideos() {
   createCanvas(windowWidth, windowHeight);
-  frameRate(30);
   setupWebSerial();
 }
+
 
 function draw() {
   if (!videosReady) {
@@ -141,7 +142,7 @@ function draw() {
     setupAfterVideos();
     window.hasSetupRun = true;
   }
-blendMode(BLEND);
+  blendMode(BLEND);
   background(0);
   blendMode(DIFFERENCE);
 
@@ -231,13 +232,14 @@ function serialEvent() {
       
       // CONTROL DELAY WITH TOF SENSOR
       if (float(vals[6]) === 0) {
+        stepSize = 0;
         feedbackDelay.delayTime.value = 0.001;
         reverb.decay = 0.001;
       } else {
         let mappedDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 1), 0.001, 1);
-        let revDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 2.5), 0.001, 2.5);
-        feedbackDelay.delayTime.value = mappedDecay;
-        reverb.decay = revDecay;
+        //let revDecay = constrain(map(float(vals[6]), 600, 10, 0.001, 2.5), 0.001, 2.5);
+       //feedbackDelay.delayTime.value = mappedDecay;
+        //reverb.decay = revDecay;
       }
       console.log('Delay time:', feedbackDelay.delayTime.value);
       console.log('reverb:', reverb.decay);
@@ -252,10 +254,7 @@ function portConnect() { serial.getPorts(); }
 function portDisconnect() { serial.close(); }
 function portError(err) { console.error("Serial port error:", err); }
 
-
-
 /// ALL AUDIO STUFF
-
 
 let rootNote;
 let octave = 2;
@@ -273,8 +272,6 @@ let feedbackDelay = new Tone.FeedbackDelay({
   delayTime : 0,
   maxDelay : 1
   }).toDestination();
-
- 
 
   let sampler = new Tone.Sampler({
     C2: "samples/synth/C2fog.mp3"
