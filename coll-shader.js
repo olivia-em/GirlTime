@@ -110,10 +110,9 @@ class VideoManager {
   
   // Video Manager Instances
   const videoManagers = categories.map(c => new VideoManager(c));
-  let washShader;
+  let wash = 100; 
   
   function preload() {
-    glitchShader = loadShader('default.vert', 'glitch.frag');
     for (let category of categories) {
       for (let i = 1; i <= totalVideos; i++) {
         const path = `images2/${category}/${i}.mp4`;
@@ -131,7 +130,6 @@ class VideoManager {
     console.log("Videos loaded");
   }
   
-  let pixelBuffer;
   
   function setupAfterVideos() {
     createCanvas(windowWidth, windowHeight, WEBGL);
@@ -140,68 +138,27 @@ class VideoManager {
     setupWebSerial();
   }
 
-  let wash = 100; 
 
   let warpSrc = `
 precision highp float;
 
 uniform sampler2D tex0;
-uniform float wash;
-
+uniform float wash; // Distortion amount (0-100)
 varying vec2 vTexCoord;
 
-// Random function
-float random(vec2 st) {
-  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-}
-
 void main() {
-  // Calculate the normalized wash value
+  // Calculate the normalized wash value (0.0-1.0)
   float normalizedWash = wash / 100.0;
   
-  // Original UV coordinates
-  vec2 uv = vTexCoord;
-  
-  // Apply glitch effects based on wash intensity
-  if (normalizedWash > 0.0) {
-    // Block distortion
-    float blockSize = mix(0.1, 0.02, normalizedWash);
-    vec2 blockUv = floor(uv / blockSize) * blockSize;
-    
-    // Create time-independent pseudo-random value
-    float offsetSeed = random(blockUv);
-    
-    // Horizontal RGB shift
-    if (random(blockUv) < normalizedWash * 0.4) {
-      float shiftAmount = normalizedWash * 0.03 * (offsetSeed - 0.5);
-      
-      // Split RGB channels
-      float r = texture2D(tex0, uv + vec2(shiftAmount, 0.0)).r;
-      float g = texture2D(tex0, uv).g;
-      float b = texture2D(tex0, uv - vec2(shiftAmount, 0.0)).b;
-      
-      gl_FragColor = vec4(r, g, b, 1.0);
-      return;
-    }
-    
-    // Vertical line skipping/jumping
-    if (random(uv + 0.1) < normalizedWash * 0.1) {
-      float jumpOffset = (random(blockUv + 0.3) - 0.5) * normalizedWash;
-      uv.y += jumpOffset;
-    }
-    
-    // Pixel blocks/noise
-    if (random(uv * 1.5) < normalizedWash * 0.03) {
-      vec2 pixelUv = floor(uv * 100.0) / 100.0;
-      float noiseValue = random(pixelUv);
-      gl_FragColor = vec4(noiseValue, noiseValue, noiseValue, 1.0);
-      return;
-    }
-  }
-  
-  // Default texture sample
-  gl_FragColor = texture2D(tex0, uv);
-}`;
+  // Offset the input coordinate based on wash amount
+  vec2 warpedCoord = vTexCoord;
+  warpedCoord.x += normalizedWash * 0.05 * sin(vTexCoord.y * 10.0);
+  warpedCoord.y += normalizedWash * 0.05 * sin(vTexCoord.x * 10.0);
+
+  // Set the new color by looking up the warped coordinate
+  gl_FragColor = texture2D(tex0, warpedCoord);
+}
+`;
 
   
 function draw() {
@@ -222,7 +179,7 @@ function draw() {
     // Reset main canvas
     blendMode(BLEND);
     background(0);
-    blendMode(EXCLUSION);
+    blendMode(LIGHTEST);
     
     usedLayouts = [];
   
@@ -318,7 +275,6 @@ function draw() {
       if (vals.length > 6) {
         [window.success, window.beauty, window.safety, window.love, window.family, window.friends] = vals.map(float);
         
-        // CONTROL DELAY WITH TOF SENSOR
         if (float(vals[6]) === 0) {
             wash = 0;
           } else {
@@ -472,49 +428,3 @@ function draw() {
       return Tone.Frequency(midiNote, "midi").toNote();
     }
     
-  
-  // function playChord(key, scalePos) {
-  //   // Calculate chord notes
-  //   let root = getNote(scalePos);
-  //   let third = getNote(scalePos + 2);
-  //   let fifth = getNote(scalePos + 4);
-  //   let chord = [root];
-    
-  //   // Play chord immediately with longer attack and release
-  //   // chord.forEach(note => {
-  //   //     sampler.triggerAttackRelease(note, "2n");
-  //   // });
-    
-  //   // Store active chord notes
-  //   activeChords[key] = chord;
-    
-  //   // Create a loop with better timing
-  //   let loop = new Tone.Loop(time => {
-  //       chord.forEach(note => {
-  //           // Use triggerAttackRelease with longer duration and overlapping
-  //           sampler.triggerAttackRelease(note, "1n", time);
-  //       });
-  //   }, "1n").start(); // Use half note duration instead of whole note
-    
-  //   // Store the loop
-  //   activeLoops[key] = loop;
-  // }
-  
-    
-  // function stopChord(key) {
-  //   if (activeChords[key]) {
-  //     activeChords[key].forEach(note => {
-  //       sampler.triggerRelease(note);
-  //     });
-  //     delete activeChords[key];
-  //   }
-  
-  //   if (activeLoops[key]) {
-  //     activeLoops[key].stop();
-  //     activeLoops[key].cancel(); // Ensures no further scheduled events
-  //     Tone.Transport.clear(activeLoops[key]); // Remove from transport
-  //     delete activeLoops[key];
-  //   }
-  // }
-  
-   
