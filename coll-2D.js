@@ -52,30 +52,37 @@ let categoryVideos = {
     chooseRandomVideo() {
       const vids = categoryVideos[this.category];
       if (!vids.length) return;
-  
+    
       const index = Math.floor(random(vids.length));
       this.selectedVideo = vids[index];
       this.selectedVideo.loop();
-  
+    
       if (!this.layout) {
-        let tries = 10, best = null;
+        let tries = 50; // try more times for better spacing
         for (let i = 0; i < tries; i++) {
           let scale = random(0.35, 0.65);
-          //let scale = random(0.25, 0.5);
           let w = width * scale;
           let h = w / (this.selectedVideo.width / this.selectedVideo.height || 1.78);
           let x = random(w / 2, width - w / 2);
           let y = random(h / 2, height - h / 2);
+    
           if (!isTooClose(x, y, w, h)) {
             this.layout = { x, y, w, h, scale };
             usedLayouts.push(this.layout);
             return;
-          } else if (!best) best = { x, y, w, h, scale };
+          }
         }
-        this.layout = best;
-        usedLayouts.push(best);
+        // If no good spot found, still place somewhere random
+        let scale = random(0.5, 0.65);
+        let w = width * scale;
+        let h = w / (this.selectedVideo.width / this.selectedVideo.height || 1.78);
+        let x = random(w / 2, width - w / 2);
+        let y = random(0, height);
+        this.layout = { x, y, w, h, scale };
+        usedLayouts.push(this.layout);
       }
     }
+    
   
     stopVideo() {
       if (this.selectedVideo) {
@@ -96,14 +103,25 @@ let categoryVideos = {
   
   
   function isTooClose(x, y, w, h) {
-    return usedLayouts.some(l => abs(x - l.x) < (w + l.w) / 2 && abs(y - l.y) < (h + l.h) / 2);
+    const baseDistance = 100;          // base minimum space
+    const sizeInfluence = (w + h) / 6;  // bigger videos need more space
+    const minDistance = baseDistance + sizeInfluence;
+  
+    return usedLayouts.some(l => {
+      let dx = x - l.x;
+      let dy = y - l.y;
+      let distance = sqrt(dx * dx + dy * dy);
+      return distance < minDistance;
+    });
   }
+  
+  
   
   // Video Manager Instances
   const videoManagers = categories.map(c => new VideoManager(c));
   
   
-  let wash = 600; 
+  let wash = 0; 
   
   function preload() {
     for (let category of categories) {
@@ -260,6 +278,7 @@ function draw() {
   
   function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
+    videoBuffer = createGraphics(windowWidth, windowHeight); 
   }
   
   // Serial Setup (unchanged from original)
