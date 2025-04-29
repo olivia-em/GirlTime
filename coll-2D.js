@@ -8,7 +8,7 @@ let categoryVideos = {
     friends: []
   };
   let totalVideos = 4;
-  let success = 1, beauty = 1, safety = 1, love = 1, family = 1, friends = 1;
+  let success = 0, beauty = 0, safety = 0, love = 0, family = 0, friends = 0;
   let mappedDecay = 0.5;
   let revDecay = 0.001;
   let videosReady = false;
@@ -235,7 +235,7 @@ function draw() {
   function checkStates() {
     categories.forEach(cat => {
       //console.log(cat, window[cat]);
-      if (window[cat] === 0) playCategory(cat);
+      if (window[cat] === 1) playCategory(cat);
       else stopCategory(cat);
     });
   }
@@ -255,7 +255,7 @@ function draw() {
                   '5': 'safety', '6': 'safety', '7': 'love', '8': 'love',
                   '9': 'family', '0': 'family', '-': 'friends', '=': 'friends' };
     const cat = map[key];
-    if (cat) window[cat] = ['1', '3', '5', '7', '9', '-'].includes(key) ? 0 : 1;
+    if (cat) window[cat] = ['1', '3', '5', '7', '9', '-'].includes(key) ? 1 : 0;
     if (key === 'r' || key === 'R') hardReset();
     if (key === 'f' || key === 'F') {
       let fs = fullscreen();
@@ -307,18 +307,18 @@ function draw() {
     const s = serial.readStringUntil("\r\n");
     if (s != null) {
       let vals = split(trim(s), ",");
-      if (vals.length > 6) {
+      if (vals.length > 5) {
         [window.success, window.beauty, window.safety, window.love, window.family, window.friends] = vals.map(float);
         
-         // CONTROL DELAY WITH TOF SENSOR
-         if (float(vals[6]) === 0) {
-            wash = 0;
-          } else {
-            // Map TOF values to wash amount (0-100)
-            wash = constrain(map(float(vals[6]), 600, 10, 0, 100), 0, 100);
-          }
+        //  // CONTROL DELAY WITH TOF SENSOR
+        //  if (float(vals[6]) === 0) {
+        //     wash = 0;
+        //   } else {
+        //     // Map TOF values to wash amount (0-100)
+        //     wash = constrain(map(float(vals[6]), 600, 10, 0, 100), 0, 100);
+        //   }
         
-        
+        console.log("Serial data:", vals);
         serial.write("x");
       }
     }
@@ -374,7 +374,7 @@ function draw() {
   // Modify playCategory function to include chord triggering
   function playCategory(cat) {
     const vm = videoManagers[categories.indexOf(cat)];
-    if (!vm.selectedVideo && window[cat] === 0) {
+    if (!vm.selectedVideo && window[cat] === 1) {
       // Original video and sound logic
      if (!soundKeys[cat]) soundKeys[cat] = random(Object.keys(soundFiles[cat]));
       const sound = players[cat].player(soundKeys[cat]);
@@ -392,11 +392,11 @@ function draw() {
   
       // sound continuation logic
       setTimeout(() => {
-        if (window[cat] === 0) {
+        if (window[cat] === 1) {
           sound.volume.value = -6;  // Restore original volume
           sound.start();
           sound.onstop = () => {
-            if (window[cat] === 0) setTimeout(() => sound.start(), 50);
+            if (window[cat] === 1) setTimeout(() => sound.start(), 50);
           };
         }
       }, 100);
