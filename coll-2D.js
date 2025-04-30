@@ -7,12 +7,13 @@ let categoryVideos = {
     family: [],
     friends: []
   };
-  let totalVideos = 4;
+  let totalVideos = 5;
   let success = 0, beauty = 0, safety = 0, love = 0, family = 0, friends = 0;
   let mappedDecay = 0.5;
   let revDecay = 0.001;
   let videosReady = false;
   let usedLayouts = [];
+  let wash = 0; 
   
   // Serial Setup
   const serial = new p5.WebSerial();
@@ -22,14 +23,62 @@ let categoryVideos = {
   // Audio Setup with Tone.js
   Tone.Players.defaults = { fadeOut: 0.1 };
   const categories = ["success", "beauty", "safety", "love", "family", "friends"];
+
+
   const soundFiles = {
-    success: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
-    beauty: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
-    safety: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
-    love: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
-    family: { shiver: "sounds/friends.mp3", stronger: "sounds/friends.mp3" },
-    friends: { sun: "sounds/friends.mp3", sweet: "sounds/friends.mp3" },
+    success: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
+    beauty: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
+    safety: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+    love: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+    family: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+    friends: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"}
   };
+
+
+  // const soundFiles = {
+  //     success: {
+  //       bonnie: "sounds/bonnie.success.mp3",
+  //       cathy: "sounds/cathy.success.mp3",
+  //       prisha: "sounds/prisha.success.mp3",
+  //       olivia: "sounds/olivia.success.mp3",
+  //       priyanka: "sounds/priyanka.success.mp3"
+  //     },
+  //     beauty: {
+  //       bonnie: "sounds/bonnie.beauty.mp3",
+  //       cathy: "sounds/cathy.beauty.mp3",
+  //       prisha: "sounds/prisha.beauty.mp3",
+  //       olivia: "sounds/olivia.beauty.mp3",
+  //       priyanka: "sounds/priyanka.beauty.mp3"
+  //     },
+  //     safety: {
+  //       bonnie: "sounds/bonnie.safety.mp3",
+  //       cathy: "sounds/cathy.safety.mp3",
+  //       prisha: "sounds/prisha.safety.mp3",
+  //       olivia: "sounds/olivia.safety.mp3",
+  //       priyanka: "sounds/priyanka.safety.mp3"
+  //     },
+  //     love: {
+  //       bonnie: "sounds/bonnie.love.mp3",
+  //       cathy: "sounds/cathy.love.mp3",
+  //       prisha: "sounds/prisha.love.mp3",
+  //       olivia: "sounds/olivia.love.mp3",
+  //       priyanka: "sounds/priyanka.love.mp3"
+  //     },
+  //     family: {
+  //       bonnie: "sounds/bonnie.family.mp3",
+  //       cathy: "sounds/cathy.family.mp3",
+  //       prisha: "sounds/prisha.family.mp3",
+  //       olivia: "sounds/olivia.family.mp3",
+  //       priyanka: "sounds/priyanka.family.mp3"
+  //     },
+  //     friends: {
+  //       bonnie: "sounds/bonnie.friends.mp3",
+  //       cathy: "sounds/cathy.friends.mp3",
+  //       prisha: "sounds/prisha.friends.mp3",
+  //       olivia: "sounds/olivia.friends.mp3",
+  //       priyanka: "sounds/priyanka.friends.mp3"
+  //     }};
+  
   const players = {};
   const currentSounds = {};
   const soundKeys = {};
@@ -121,12 +170,10 @@ let categoryVideos = {
   const videoManagers = categories.map(c => new VideoManager(c));
   
   
-  let wash = 0; 
-  
   function preload() {
     for (let category of categories) {
       for (let i = 1; i <= totalVideos; i++) {
-        const path = `images2/${category}/${i}.mp4`;
+        const path = `videos/${category}/${i}.mp4`;
   
         let vid = createVideo(path)
         vid.hide();
