@@ -26,13 +26,24 @@ let categoryVideos = {
 
 
   const soundFiles = {
-    success: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
-    beauty: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
-    safety: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
-    love: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
-    family: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
-    friends: { bonnie: "sounds/friends.mp3", cathy: "sounds/friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"}
+    success: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.success.mp3"},
+    beauty: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.beauty.mp3"},
+    safety: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.safety.mp3"},
+    love: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.love.mp3" },
+    family: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.family.mp3" },
+    friends: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.friends.mp3"}
   };
+
+
+
+  // const soundFiles = {
+  //   success: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.success.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
+  //   beauty: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.beauty.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"},
+  //   safety: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.safety.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+  //   love: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.love.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+  //   family: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.family.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3" },
+  //   friends: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.friends.mp3", prisha: "sounds/friends.mp3", olivia: "sounds/friends.mp3", priyanka: "sounds/friends.mp3"}
+  // };
 
 
   // const soundFiles = {
