@@ -26,12 +26,12 @@ let categoryVideos = {
 
 
   const soundFiles = {
-    success: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.success.mp3"},
-    beauty: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.beauty.mp3"},
-    safety: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.safety.mp3"},
-    love: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.love.mp3" },
-    family: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.family.mp3" },
-    friends: { bonnie: "sounds/friends.mp3", cathy: "sounds/cathy.friends.mp3"}
+    success: { bonnie: "sounds/bonnie.success.mp3", cathy: "sounds/cathy.success.mp3", priyanka: "sounds/priyanka.success.mp3"},
+    beauty: { bonnie: "sounds/bonnie.beauty.mp3", cathy: "sounds/cathy.beauty.mp3", priyanka: "sounds/priyanka.beauty.mp3"},
+    safety: { bonnie: "sounds/bonnie.safety.mp3", cathy: "sounds/cathy.safety.mp3", priyanka: "sounds/priyanka.safety.mp3"},
+    love: { bonnie: "sounds/bonnie.love.mp3", cathy: "sounds/cathy.love.mp3", priyanka: "sounds/priyanka.love.mp3"},
+    family: { bonnie: "sounds/bonnie.family.mp3", cathy: "sounds/cathy.family.mp3", priyanka: "sounds/priyanka.family.mp3"},
+    friends: { bonnie: "sounds/bonnie.friends.mp3", cathy: "sounds/cathy.friends.mp3", priyanka: "sounds/priyanka.friends.mp3"}
   };
 
 
