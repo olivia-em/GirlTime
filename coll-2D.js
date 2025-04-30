@@ -366,7 +366,7 @@ function draw() {
     if (s != null) {
       let vals = split(trim(s), ",");
       if (vals.length > 5) {
-        [window.success, window.beauty, window.safety, window.love, window.family, window.friends] = vals.map(float);
+        [window.friends, window.beauty, window.success, window.family, window.love, window.safety] = vals.map(float);
         
         //  // CONTROL DELAY WITH TOF SENSOR
         //  if (float(vals[6]) === 0) {
