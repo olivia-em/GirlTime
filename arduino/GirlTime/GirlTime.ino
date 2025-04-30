@@ -28,7 +28,8 @@ void loop() {
   // Read current analog values and print status
   for (int i = 0; i < NUM_SENSORS; i++) {
     current[i] = analogRead(sensorPins[i]);
-    int status = (abs(current[i] - base[i]) >= DIFFERENCE_THRESHOLD) ? 1 : 0;
+    int difference = abs(current[i] - base[i]);
+    int status = (difference >= DIFFERENCE_THRESHOLD) ? 1 : 0;
     Serial.print(status);
     if (i < NUM_SENSORS - 1) Serial.print(",");
   }
