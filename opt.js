@@ -25,8 +25,6 @@ let inData = [], inString = [], outByte = 0;
 Tone.Players.defaults = { fadeOut: 0.1 };
 const categories = ["success", "beauty", "safety", "love", "family", "friends"];
 
-// Reduced number of sound options to decrease memory usage
-
 const soundFiles = {
   success: {
     bonnie: "sounds/bonnie.success.mp3",
@@ -452,7 +450,17 @@ function serialEvent() {
       // Use destructuring assignment for clarity
       [window.success, window.beauty, window.safety, window.love, window.family, window.friends] = vals.map(float);
       
+        
+        //  // CONTROL DELAY WITH TOF SENSOR
+        //  if (float(vals[6]) === 0) {
+        //     wash = 0;
+        //   } else {
+        //     // Map TOF values to wash amount (0-100)
+        //     wash = constrain(map(float(vals[6]), 600, 10, 0, 100), 0, 100);
+        //   }
+
       // Send acknowledgment back to serial device
+      console.log("Serial data:", vals);
       serial.write("x");
     }
   }
