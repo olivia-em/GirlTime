@@ -26,15 +26,58 @@ Tone.Players.defaults = { fadeOut: 0.1 };
 const categories = ["success", "beauty", "safety", "love", "family", "friends"];
 
 // Reduced number of sound options to decrease memory usage
-const soundFiles = {
-  success: { bonnie: "sounds/bonnie.success.mp3", cathy: "sounds/cathy.success.mp3", priyanka: "sounds/priyanka.success.mp3"},
-  beauty: { bonnie: "sounds/bonnie.beauty.mp3", cathy: "sounds/cathy.beauty.mp3", priyanka: "sounds/priyanka.beauty.mp3"},
-  safety: { bonnie: "sounds/bonnie.safety.mp3", cathy: "sounds/cathy.safety.mp3", priyanka: "sounds/priyanka.safety.mp3"},
-  love: { bonnie: "sounds/bonnie.love.mp3", cathy: "sounds/cathy.love.mp3", priyanka: "sounds/priyanka.love.mp3"},
-  family: { bonnie: "sounds/bonnie.family.mp3", cathy: "sounds/cathy.family.mp3", priyanka: "sounds/priyanka.family.mp3"},
-  friends: { bonnie: "sounds/bonnie.friends.mp3", cathy: "sounds/cathy.friends.mp3", priyanka: "sounds/priyanka.friends.mp3"}
-};
 
+const soundFiles = {
+  success: {
+    bonnie: "sounds/bonnie.success.mp3",
+    cathy: "sounds/cathy.success.mp3",
+    prisha: "sounds/prisha.success.mp3",
+    olivia: "sounds/olivia.success.mp3",
+    priyanka: "sounds/priyanka.success.mp3",
+    sarah: "sounds/sarah.success.mp3"
+  },
+  beauty: {
+    bonnie: "sounds/bonnie.beauty.mp3",
+    cathy: "sounds/cathy.beauty.mp3",
+    prisha: "sounds/prisha.beauty.mp3",
+    olivia: "sounds/olivia.beauty.mp3",
+    priyanka: "sounds/priyanka.beauty.mp3",
+    sarah: "sounds/sarah.beauty.mp3"
+  },
+  safety: {
+    bonnie: "sounds/bonnie.safety.mp3",
+    cathy: "sounds/cathy.safety.mp3",
+    prisha: "sounds/prisha.safety.mp3",
+    olivia: "sounds/olivia.safety.mp3",
+    priyanka: "sounds/priyanka.safety.mp3",
+    sarah: "sounds/sarah.safety.mp3"
+  },
+  love: {
+    bonnie: "sounds/bonnie.love.mp3",
+    cathy: "sounds/cathy.love.mp3",
+    prisha: "sounds/prisha.love.mp3",
+    olivia: "sounds/olivia.love.mp3",
+    priyanka: "sounds/priyanka.love.mp3",
+    sarah: "sounds/sarah.love.mp3"
+  },
+  family: {
+    bonnie: "sounds/bonnie.family.mp3",
+    cathy: "sounds/cathy.family.mp3",
+    prisha: "sounds/prisha.family.mp3",
+    olivia: "sounds/olivia.family.mp3",
+    priyanka: "sounds/priyanka.family.mp3",
+    sarah: "sounds/sarah.family.mp3"
+  },
+  friends: {
+    bonnie: "sounds/bonnie.friends.mp3",
+    cathy: "sounds/cathy.friends.mp3",
+    prisha: "sounds/prisha.friends.mp3",
+    olivia: "sounds/olivia.friends.mp3",
+    priyanka: "sounds/priyanka.friends.mp3",
+    sarah: "sounds/sarah.friends.mp3"
+  }};
+
+  
 const players = {};
 const currentSounds = {};
 const soundKeys = {};
